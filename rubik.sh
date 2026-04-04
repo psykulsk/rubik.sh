@@ -1,0 +1,411 @@
+#!/usr/bin/env bash
+
+
+# check if script is executed with bash, version >= 4.0
+if [[ -z $BASH_VERSION ]]; then
+		echo 'Execute this script with bash, version >= 4.0'
+		exit 1
+fi
+
+VERSION_ABOVE_OR_EQUAL_4_REGEX='^[^0-3]\..*\|^[0-9][0-9][0-9]*\..*'
+echo $BASH_VERSION | grep $VERSION_ABOVE_OR_EQUAL_4_REGEX
+if [[ $? -ne 0 ]]; then
+	echo "Execute this script with bash, version >= 4.0. Your current version=$BASH_VERSION"
+	exit 1
+fi
+
+# remove highlighted terminal cursor
+tput civis
+# reset to normal on exit
+trap 'tput cnorm;' EXIT
+# reset to normal on exit and clean screen on SIGINT (Ctrl-C)
+trap 'tput cnorm; clear; exit;' SIGINT
+
+# declare default options
+declare -i cols=50
+declare -i rows=25
+X_TIME=0.1
+Y_TIME=0.14
+REFRESH_TIME=$X_TIME
+
+# holds a screen matrix in an associative array
+declare -A screen
+# holds a cube matrix in an associative array
+declare -A cube
+
+declare -i draw_start_cols=cols/3
+declare -i draw_start_rows=rows/3
+
+# key input from user
+key=""
+
+# constants
+declare -r EMPTY=" "
+declare -r ARROW_UP="A"
+declare -r ARROW_DOWN="B"
+declare -r ARROW_RIGHT="C"
+declare -r ARROW_LEFT="D"
+declare -r HORIZONTAL_BAR="-"
+declare -r VERTICAL_BAR="|"
+declare -r CORNER_ICON="\e[41m \e[0m"
+declare -r RED_TEXT="\e[31m"
+declare -r GREEN_TEXT="\e[32m"
+declare -r YELLOW_TEXT="\e[33m"
+declare -r BLUE_TEXT="\e[34m"
+declare -r DIM="\e[2m"
+declare -r GREEN_BG="\e[42m"
+declare -r RESET="\e[0m"
+declare -r GREEN_LOWER_DIAG="${GREEN_TEXT}\u259B\e${RESET}"
+declare -r GREEN_UPPER_DIAG="${GREEN_TEXT}\u259F\e${RESET}"
+declare -r GREEN_PARA="${GREEN_TEXT}\u28FF\e${RESET}"
+declare -r FULL="\u28FF"
+declare -r GREEN_FULL="${GREEN_TEXT}\u28FF${RESET}"
+declare -r RED_FULL="${RED_TEXT}\u28FF${RESET}"
+declare -r YELLOW_FULL="${YELLOW_TEXT}\u28FF${RESET}"
+declare -r BLUE_FULL="${BLUE_TEXT}\u28FF${RESET}"
+declare -r DIM_GREEN_FULL="${DIM}${GREEN_TEXT}\u28FF${RESET}"
+declare -r DIM_RED_FULL="${DIM}${RED_TEXT}\u28FF${RESET}"
+declare -r DIM_YELLOW_FULL="${DIM}${YELLOW_TEXT}\u28FF${RESET}"
+declare -r DIM_BLUE_FULL="${DIM}${BLUE_TEXT}\u28FF${RESET}"
+declare -r DIAG_TOP="\u28E0"
+declare -r DIAG_BOT="\u280B"
+declare -r DIAG_BOT_2="\u281F"
+
+declare -i N_CUBE=3
+
+declare -i FRONT_SQUARE_COLS_SIZE=5
+declare -i FRONT_SQUARE_ROWS_SIZE=4
+declare -i TOP_SQUARE_COLS_SIZE=4
+declare -i TOP_SQUARE_ROWS_SIZE=2
+declare -i RIGHT_SQUARE_COLS_SIZE=3
+declare -i RIGHT_SQUARE_ROWS_SIZE=4
+
+parse_args ()
+{
+	local OPTIND opt
+	while getopts ":c:r:s:h" opt; do
+		case ${opt} in
+			c )
+			cols=$OPTARG
+			;;
+			r )
+			rows=$OPTARG
+			;;
+			s )
+			set_speed "$OPTARG"
+			;;
+			h )
+			usage
+			exit 0
+			;;
+			\? )
+			usage
+			exit 1
+			;;
+		esac
+	done
+}
+
+usage ()
+{
+    echo "usage: $0 [-c cols ] [-r rows] [-s speed]"
+    echo "  -h display help"
+    echo "  -c cols specify game area cols. Make sure it's not higher then the actual terminal's width. "
+    echo "  -r rows specify game area rows. Make sure it's not higher then the actual terminal's height."
+    echo "  -s speed specify snake speed. Value from 1-10."
+}
+
+clear_game_area_screen ()
+{
+	clear
+	for ((i=1;i<rows;i++)); do
+		for ((j=1;j<cols;j++)); do
+			screen[$i,$j]=$EMPTY
+		done
+	done
+	draw_game_area_boundaries
+}
+
+draw_game_area_boundaries()
+{
+	for i in 0 $rows; do
+		for ((j=0;j<cols;j++)); do
+			screen[$i,$j]=$HORIZONTAL_BAR
+		done
+	done
+	for j in 0 $cols; do
+		for ((i=0;i<rows+1;i++)); do
+			screen[$i,$j]=$VERTICAL_BAR
+		done
+	done
+	screen[0,0]=$CORNER_ICON
+	screen[0,$cols]=$CORNER_ICON
+	screen[$rows,$cols]=$CORNER_ICON
+	screen[$rows,0]=$CORNER_ICON
+}
+
+print_screen ()
+{
+	for ((i=0;i<rows+1;i++)); do
+		for ((j=0;j<cols+1;j++)); do
+			printf "${screen[$i,$j]}"
+		done
+		printf "\n"
+	done
+}
+
+handle_input ()
+{
+	if [[ "$1" = "$ARROW_UP" ]]; then
+		if (( vel_y != 1 )); then
+			vel_x=0
+			vel_y=-1
+			REFRESH_TIME=$Y_TIME
+		fi
+	elif [[ "$1" = "$ARROW_DOWN" ]]; then
+		if (( vel_y != -1 )); then
+			vel_x=0
+			vel_y=1
+			REFRESH_TIME=$Y_TIME
+		fi
+	elif [[ "$1" = "$ARROW_RIGHT" ]]; then
+		if (( vel_x != -1 )); then
+			vel_x=1
+			vel_y=0
+			REFRESH_TIME=$X_TIME
+		fi
+	elif [[ "$1" = "$ARROW_LEFT" ]]; then
+		if (( vel_x != 1 )); then
+			vel_x=-1
+			vel_y=0
+			REFRESH_TIME=$X_TIME
+		fi
+	else
+		:
+	fi
+}
+declare -i LEFT_Y=${N_CUBE}
+declare -i LEFT_X=0
+declare -i FRONT_Y=${N_CUBE}
+declare -i FRONT_X=$(( 1*${N_CUBE} ))
+declare -i RIGHT_Y=${N_CUBE}
+declare -i RIGHT_X=$(( 2*${N_CUBE} ))
+declare -i BACK_Y=${N_CUBE}
+declare -i BACK_X=$(( 3*${N_CUBE} ))
+declare -i TOP_Y=0
+declare -i TOP_X=0
+declare -i BOT_Y=$(( 2*${N_CUBE} ))
+declare -i BOT_X=0
+
+declare -r BLUE="BLUE"
+declare -r GREEN="GREEN"
+declare -r WHITE="WHITE"
+declare -r YELLOW="YELLOW"
+declare -r RED="RED"
+declare -r ORANGE="ORANGE"
+declare -A STARTING_COLORS=( $BLUE $GREEN $WHITE $YELLOW $RED $ORANGE )
+declare -A COLOR_MAPPING=( [$BLUE]=$BLUE_FULL [$GREEN]=$GREEN_FULL [$WHITE]=$WHITE_FULL [$YELLOW]=$YELLOW_FULL [$RED]=$RED_FULL [$ORANGE]=$ORANGE_FULL )
+
+
+set_color_to_wall_on_cube()
+{
+    #echo "0=$0, 1=$1, 2=$2, 3=$3, 4=$4"
+    start_x=$1
+    start_y=$2
+    color=$3
+    #echo "color=$color"
+    #echo "start_x=$start_x max_x= $(( start_x+N_CUBE ))"
+    #echo "start_y=$start_y max_y= $(( start_y+N_CUBE ))"
+	for (( x=start_x;x<start_x+N_CUBE;x++ )); do
+        for (( y=start_y;y<start_y+N_CUBE;y++ )); do
+			cube[$y,$x]=$color
+            #echo "cube [$y, $x] value = ${cube[$y,$x]}"
+		done
+	done
+}
+
+reset_cube()
+{
+    set_color_to_wall_on_cube $TOP_X $TOP_Y $BLUE
+    set_color_to_wall_on_cube $LEFT_X $LEFT_Y $WHITE
+    set_color_to_wall_on_cube $FRONT_X $FRONT_Y $RED
+    set_color_to_wall_on_cube $RIGHT_X $RIGHT_Y $YELLOW
+    set_color_to_wall_on_cube $BACK_X $BACK_Y $ORANGE
+    set_color_to_wall_on_cube $BOT_X $BOT_Y $GREEN
+}
+
+draw_diag_right_square ()
+{
+    start_r=$1
+    start_c=$2
+    cell=$3
+    r=$(( $start_r-1 ))
+    c=$start_c
+    screen[$(($r)),$(($c))]=$cell
+    screen[$(($r+1)),$(($c))]=$cell
+    screen[$(($r+2)),$(($c))]=$cell
+    screen[$(($r+3)),$(($c))]=$cell
+    r=$(( $start_r-1 ))
+    c=$(( $start_c+1 ))
+    screen[$(($r)),$(($c))]=$cell
+    screen[$(($r+1)),$(($c))]=$cell
+    screen[$(($r+2)),$(($c))]=$cell
+    screen[$(($r+3)),$(($c))]=$cell
+    r=$(( $start_r-2 ))
+    c=$(( $start_c+2 ))
+    screen[$(($r)),$(($c))]=$cell
+    screen[$(($r+1)),$(($c))]=$cell
+    screen[$(($r+2)),$(($c))]=$cell
+    screen[$(($r+3)),$(($c))]=$cell
+}
+
+draw_front_square ()
+{
+    #echo "drawing front square 1=$1 2=$2 3=$3"
+
+    r=$1
+    c=$2
+    cell=$3
+    screen[$(($r)),$(($c))]=$cell
+    screen[$(($r)),$(($c+1))]=$cell
+    screen[$(($r)),$(($c+2))]=$cell
+    screen[$(($r)),$(($c+3))]=$cell
+    screen[$(($r)),$(($c+4))]=$cell
+    screen[$(($r+1)),$(($c))]=$cell
+    screen[$(($r+1)),$(($c+1))]=$cell
+    screen[$(($r+1)),$(($c+2))]=$cell
+    screen[$(($r+1)),$(($c+3))]=$cell
+    screen[$(($r+1)),$(($c+4))]=$cell
+    screen[$(($r+2)),$(($c))]=$cell
+    screen[$(($r+2)),$(($c+1))]=$cell
+    screen[$(($r+2)),$(($c+2))]=$cell
+    screen[$(($r+2)),$(($c+3))]=$cell
+    screen[$(($r+2)),$(($c+4))]=$cell
+    screen[$(($r+3)),$(($c))]=$cell
+    screen[$(($r+3)),$(($c+1))]=$cell
+    screen[$(($r+3)),$(($c+2))]=$cell
+    screen[$(($r+3)),$(($c+3))]=$cell
+    screen[$(($r+3)),$(($c+4))]=$cell
+
+}
+
+draw_diag_top_square ()
+{
+    start_r=$1
+    start_c=$2
+    cell=$3
+    r=$start_r
+    c=$start_c
+    screen[$(($r)),$(($c))]=$cell
+    screen[$(($r)),$(($c+1))]=$cell
+    screen[$(($r)),$(($c+2))]=$cell
+    screen[$(($r)),$(($c+3))]=$cell
+    r=$start_r-1
+    c=$start_c+2
+    screen[$(($r)),$(($c))]=$cell
+    screen[$(($r)),$(($c+1))]=$cell
+    screen[$(($r)),$(($c+2))]=$cell
+    screen[$(($r)),$(($c+3))]=$cell
+}
+
+wall_to_screen()
+{
+    draw_method=$1
+    wall_start_row=$2
+    wall_start_cols=$3
+    wall_cube_x=$4
+    wall_cube_y=$5
+    wall_rows_size=$6
+    wall_cols_size=$7
+    row_shift_each_y=$8
+    col_shift_each_x=$9
+	for (( x=wall_cube_x;x<wall_cube_x+N_CUBE;x++ )); do
+            col_shift=$(( $col_shift_each_x*(x-wall_cube_x) ))
+        for (( y=wall_cube_y;y<wall_cube_y+N_CUBE;y++ )); do
+			color=${cube[$y,$x]}
+            color_from_mapping=${COLOR_MAPPING[$color]}
+            row_shift=$(( $row_shift_each_y*(y-wall_cube_y) ))
+            echo "row_shift=$row_shift"
+            start_rows=$(( row_shift+wall_start_row+(y-N_CUBE)*wall_rows_size))
+            start_cols=$(( col_shift+wall_start_cols+(x-N_CUBE)*wall_cols_size))
+            color_to_set=$color_from_mapping
+            if (( (y-N_CUBE) % 2 == 1 )); then
+                if (( (x-N_CUBE) % 2 == 1 )); then
+                    color_to_set=$DIM$color_from_mapping
+                fi
+            else 
+                if (( (x-N_CUBE) % 2 == 0 )); then
+                    color_to_set=$DIM$color_from_mapping
+                fi
+            fi
+            $draw_method $start_rows $start_cols $color_to_set
+		done
+	done
+    
+}
+
+cube_to_screen()
+{
+    front_row=$1
+    front_col=$2
+
+    echo "front_row=$front_row, front_col=$front_col"
+    #echo "FRONT_X=$FRONT_X"
+
+    #draw front
+    wall_to_screen draw_front_square $front_row $front_col $FRONT_X $FRONT_Y $FRONT_SQUARE_ROWS_SIZE $FRONT_SQUARE_COLS_SIZE 0 0
+    
+    right_wall_row=$(( $front_row ))
+    right_wall_col=$(( $front_col + FRONT_SQUARE_COLS_SIZE + 1 ))
+    wall_to_screen draw_diag_right_square $right_wall_row $right_wall_col $RIGHT_X $RIGHT_Y $RIGHT_SQUARE_ROWS_SIZE $RIGHT_SQUARE_COLS_SIZE -1 1
+}
+
+game ()
+{
+
+    #diag_front_square $draw_start_rows $draw_start_cols $GREEN_FULL
+    #diag_top_square $draw_start_rows-1 $draw_start_cols+1 $RED_FULL
+    #diag_right_square $draw_start_rows $draw_start_cols+5 $DIM_GREEN_FULL
+
+    #diag_top_square $draw_start_rows-3 $draw_start_cols+4 $DIM_GREEN_FULL
+    #diag_right_square $draw_start_rows-2 $draw_start_cols+8 $GREEN_FULL
+
+    reset_cube
+
+    cube_to_screen $draw_start_rows $draw_start_cols
+    #draw_front_square $draw_start_rows $draw_start_cols $GREEN_FULL
+
+    print_screen
+}
+
+set_pixel ()
+{
+	tput cup "$1" "$2"
+	printf "%s" "$3"
+}
+
+set_cursor_below_game ()
+{
+	tput cup $(($rows+1)) 0
+}
+
+# execute game loop, then sleep for REFRESH_TIME in a subshell and send SIGALRM to the current process
+# thanks to the trap below it will trigger the game loop again
+#tick() {
+#	tput cup 0 0
+#	handle_input "$key"
+#	game
+#	( sleep $REFRESH_TIME; kill -s ALRM $$ &> /dev/null )&
+#}
+#trap tick ALRM
+
+parse_args "$@"
+clear_game_area_screen
+#print_screen
+# start game
+game
+# poll for user input in loop
+#for (( ; ; ))
+#do
+#	read -rsn 1 key
+#done
