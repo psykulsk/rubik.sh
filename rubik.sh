@@ -48,6 +48,7 @@ declare -r ARROW_LEFT="D"
 declare -r HORIZONTAL_BAR="-"
 declare -r VERTICAL_BAR="|"
 declare -r CORNER_ICON="\e[41m \e[0m"
+declare -r WHITE_TEXT="\e[29m"
 declare -r RED_TEXT="\e[31m"
 declare -r GREEN_TEXT="\e[32m"
 declare -r YELLOW_TEXT="\e[33m"
@@ -59,6 +60,7 @@ declare -r GREEN_LOWER_DIAG="${GREEN_TEXT}\u259B\e${RESET}"
 declare -r GREEN_UPPER_DIAG="${GREEN_TEXT}\u259F\e${RESET}"
 declare -r GREEN_PARA="${GREEN_TEXT}\u28FF\e${RESET}"
 declare -r FULL="\u28FF"
+declare -r WHITE_FULL="${WHITE_TEXT}\u28FF${RESET}"
 declare -r GREEN_FULL="${GREEN_TEXT}\u28FF${RESET}"
 declare -r RED_FULL="${RED_TEXT}\u28FF${RESET}"
 declare -r YELLOW_FULL="${YELLOW_TEXT}\u28FF${RESET}"
@@ -75,7 +77,7 @@ declare -i N_CUBE=3
 
 declare -i FRONT_SQUARE_COLS_SIZE=5
 declare -i FRONT_SQUARE_ROWS_SIZE=4
-declare -i TOP_SQUARE_COLS_SIZE=4
+declare -i TOP_SQUARE_COLS_SIZE=5
 declare -i TOP_SQUARE_ROWS_SIZE=2
 declare -i RIGHT_SQUARE_COLS_SIZE=3
 declare -i RIGHT_SQUARE_ROWS_SIZE=4
@@ -239,7 +241,7 @@ draw_diag_right_square ()
     start_r=$1
     start_c=$2
     cell=$3
-    r=$(( $start_r-1 ))
+    r=$(( $start_r ))
     c=$start_c
     screen[$(($r)),$(($c))]=$cell
     screen[$(($r+1)),$(($c))]=$cell
@@ -291,21 +293,21 @@ draw_front_square ()
 
 draw_diag_top_square ()
 {
-    start_r=$1
-    start_c=$2
     cell=$3
-    r=$start_r
-    c=$start_c
+    r=$1
+    c=$2
     screen[$(($r)),$(($c))]=$cell
     screen[$(($r)),$(($c+1))]=$cell
     screen[$(($r)),$(($c+2))]=$cell
     screen[$(($r)),$(($c+3))]=$cell
-    r=$start_r-1
-    c=$start_c+2
+    screen[$(($r)),$(($c+4))]=$cell
+    r=$1+1
+    c=$2-1
     screen[$(($r)),$(($c))]=$cell
     screen[$(($r)),$(($c+1))]=$cell
     screen[$(($r)),$(($c+2))]=$cell
     screen[$(($r)),$(($c+3))]=$cell
+    screen[$(($r)),$(($c+4))]=$cell
 }
 
 wall_to_screen()
@@ -320,21 +322,20 @@ wall_to_screen()
     row_shift_each_y=$8
     col_shift_each_x=$9
 	for (( x=wall_cube_x;x<wall_cube_x+N_CUBE;x++ )); do
-            col_shift=$(( $col_shift_each_x*(x-wall_cube_x) ))
+            row_shift=$(( $row_shift_each_y*(x-wall_cube_x) ))
         for (( y=wall_cube_y;y<wall_cube_y+N_CUBE;y++ )); do
 			color=${cube[$y,$x]}
             color_from_mapping=${COLOR_MAPPING[$color]}
-            row_shift=$(( $row_shift_each_y*(y-wall_cube_y) ))
-            echo "row_shift=$row_shift"
-            start_rows=$(( row_shift+wall_start_row+(y-N_CUBE)*wall_rows_size))
-            start_cols=$(( col_shift+wall_start_cols+(x-N_CUBE)*wall_cols_size))
+            col_shift=$(( $col_shift_each_x*(y-wall_cube_y) ))
+            start_rows=$(( row_shift+wall_start_row+(y-wall_cube_y)*wall_rows_size))
+            start_cols=$(( col_shift+wall_start_cols+(x-wall_cube_x)*wall_cols_size))
             color_to_set=$color_from_mapping
-            if (( (y-N_CUBE) % 2 == 1 )); then
-                if (( (x-N_CUBE) % 2 == 1 )); then
+            if (( (y-wall_cube_y) % 2 == 1 )); then
+                if (( (x-wall_cube_x) % 2 == 1 )); then
                     color_to_set=$DIM$color_from_mapping
                 fi
             else 
-                if (( (x-N_CUBE) % 2 == 0 )); then
+                if (( (x-wall_cube_x) % 2 == 0 )); then
                     color_to_set=$DIM$color_from_mapping
                 fi
             fi
@@ -349,16 +350,17 @@ cube_to_screen()
     front_row=$1
     front_col=$2
 
-    echo "front_row=$front_row, front_col=$front_col"
-    #echo "FRONT_X=$FRONT_X"
-
-    #draw front
     wall_to_screen draw_front_square $front_row $front_col $FRONT_X $FRONT_Y $FRONT_SQUARE_ROWS_SIZE $FRONT_SQUARE_COLS_SIZE 0 0
     
     right_wall_row=$(( $front_row ))
-    right_wall_col=$(( $front_col + FRONT_SQUARE_COLS_SIZE + 1 ))
-    wall_to_screen draw_diag_right_square $right_wall_row $right_wall_col $RIGHT_X $RIGHT_Y $RIGHT_SQUARE_ROWS_SIZE $RIGHT_SQUARE_COLS_SIZE -1 1
+    right_wall_col=$(( $front_col + FRONT_SQUARE_COLS_SIZE*N_CUBE ))
+    wall_to_screen draw_diag_right_square $right_wall_row $right_wall_col $RIGHT_X $RIGHT_Y $RIGHT_SQUARE_ROWS_SIZE $RIGHT_SQUARE_COLS_SIZE -2 0
+
+    top_wall_row=$(( $front_row - TOP_SQUARE_ROWS_SIZE*N_CUBE  ))
+    top_wall_col=$(( $front_col + RIGHT_SQUARE_COLS_SIZE*N_CUBE - 1 ))
+    wall_to_screen draw_diag_top_square $top_wall_row $top_wall_col $TOP_X $TOP_Y $TOP_SQUARE_ROWS_SIZE $TOP_SQUARE_COLS_SIZE 0 -3
 }
+
 
 game ()
 {
