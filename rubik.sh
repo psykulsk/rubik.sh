@@ -174,11 +174,8 @@ handle_input ()
 			REFRESH_TIME=$Y_TIME
 		fi
 	elif [[ "$1" = "$ARROW_RIGHT" ]]; then
-		if (( vel_x != -1 )); then
-			vel_x=1
-			vel_y=0
-			REFRESH_TIME=$X_TIME
-		fi
+        #echo "test input"
+        top_wall_clockwise_rotation
 	elif [[ "$1" = "$ARROW_LEFT" ]]; then
 		if (( vel_x != 1 )); then
 			vel_x=-1
@@ -238,12 +235,12 @@ rotate_values_between_points()
 {
     local -n map_of_values=$1
     IFS=';' read -r -a arrays_of_points <<< "$2" 
-    echo "arrays_of_points=${arrays_of_points[@]}"
+    #echo "arrays_of_points=${arrays_of_points[@]}"
     first_array_of_points=${arrays_of_points[0]}
-    echo "first_array_of_points=$first_array_of_points"
+    #echo "first_array_of_points=$first_array_of_points"
     copy_of_first_array_of_values=()
     copy_values_from_2d_map_to_array map_of_values copy_of_first_array_of_values $first_array_of_points 
-    echo "copy_of_first_array_of_values=${copy_of_first_array_of_values[@]}"
+    #echo "copy_of_first_array_of_values=${copy_of_first_array_of_values[@]}"
     copy_values_from_points_to_points_in_2d_map map_of_values arrays_of_points[3] arrays_of_points[0] 
     copy_values_from_points_to_points_in_2d_map map_of_values arrays_of_points[2] arrays_of_points[3] 
     copy_values_from_points_to_points_in_2d_map map_of_values arrays_of_points[1] arrays_of_points[2] 
@@ -256,16 +253,16 @@ copy_values_from_2d_map_to_array()
     local -n output_array=$2
     IFS='_' read -r -a array_of_points leftover <<< $3
     i=0
-    echo "local_map_of_values=${local_map_of_values[0,0]}"
-    echo "array_of_points=${array_of_points[@]}"
+    #echo "local_map_of_values=${local_map_of_values[0,0]}"
+    #echo "array_of_points=${array_of_points[@]}"
     for point in ${array_of_points[@]}
     do
         # Temporarily change IFS to a comma and read into an array
         IFS=',' read -r x y leftover <<< $point
         value=${local_map_of_values[$y,$x]}
-        echo "x=$x, y=$y, i=$i, value=$value"
+        #echo "x=$x, y=$y, i=$i, value=$value"
         output_array[$i]=$value
-        echo "output_array[@]=${output_array[@]}"
+        #echo "output_array[@]=${output_array[@]}"
         i=$((i+1))
     done
 }
@@ -277,15 +274,15 @@ copy_values_from_points_to_points_in_2d_map()
     local -n target_points=$3
     IFS='_' read -r -a array_of_source_points leftover <<< $source_points
     IFS='_' read -r -a array_of_target_points leftover <<< $target_points
-    echo "array_of_source_points=${array_of_source_points[@]}"
-    echo "array_of_target_points=${array_of_target_points[@]}"
+    #echo "array_of_source_points=${array_of_source_points[@]}"
+    #echo "array_of_target_points=${array_of_target_points[@]}"
     for i in 0 1 2
     do
         IFS=',' read -r source_x source_y leftover <<< ${array_of_source_points[$i]}
         IFS=',' read -r target_x target_y leftover <<< ${array_of_target_points[$i]}
         source_value=${local_map_of_values[$source_y,$source_x]}
         target_value=${local_map_of_values[$target_y,$target_x]}
-        echo "source_x=$source_x, source_y=$source_y, i=$i, target_x=$target_x, target_y=$target_y source_alue=$source_value target_value=$target_value"
+        #echo "source_x=$source_x, source_y=$source_y, i=$i, target_x=$target_x, target_y=$target_y source_alue=$source_value target_value=$target_value"
         local_map_of_values[$target_y,$target_x]=$source_value
     done
 }
@@ -301,7 +298,7 @@ set_value_from_array_to_2d_map()
         IFS=',' read -r x y <<< $point
         value_before=${local_map_of_values[$y,$x]}
         value_to_set=${values[$i]}
-        echo "x=$x, y=$y, i=$i, value_before=$value_before,value_to_set=$value_to_set"
+        #echo "setting value x=$x, y=$y, i=$i, value_before=$value_before,value_to_set=$value_to_set"
         local_map_of_values[$y,$x]=$value_to_set
         i=$((i+1))
     done
@@ -442,49 +439,71 @@ cube_to_screen()
     wall_to_screen draw_diag_top_square $top_wall_row $top_wall_col $TOP_X $TOP_Y $TOP_SQUARE_ROWS_SIZE $TOP_SQUARE_COLS_SIZE 0 -3
 }
 
-
-game ()
+horizontal_rotation_seq()
 {
-
-    #diag_front_square $draw_start_rows $draw_start_cols $GREEN_FULL
-    #diag_top_square $draw_start_rows-1 $draw_start_cols+1 $RED_FULL
-    #diag_right_square $draw_start_rows $draw_start_cols+5 $DIM_GREEN_FULL
-
-    #diag_top_square $draw_start_rows-3 $draw_start_cols+4 $DIM_GREEN_FULL
-    #diag_right_square $draw_start_rows-2 $draw_start_cols+8 $GREEN_FULL
-
-    reset_cube
-
-    cube_to_screen $draw_start_rows $draw_start_cols
-    #draw_front_square $draw_start_rows $draw_start_cols $GREEN_FULL
-
-    print_screen
-    
-
-    #rotate top row from front left
-    top_row_front_left_rotation=""
-    for row_start_point in "${FRONT_X},${FRONT_Y}" "${LEFT_X},${LEFT_Y}" "${BACK_X},${BACK_Y}" "${RIGHT_X},${RIGHT_Y}"
+    sequence=""
+    for row_start_point in $1
     do
     
-        echo "row_start_point=$row_start_point"
+        #echo "row_start_point=$row_start_point"
         IFS=',' read -r x y <<< $row_start_point
         for i in {0..2}
         do
-            echo "x=$x, y=$y"
+            #echo "x=$x, y=$y"
             start_x=$((x+i))
-            echo "start_x=$start_x"
-            top_row_front_left_rotation="${top_row_front_left_rotation}${start_x},${y}_"
+            #echo "start_x=$start_x"
+            sequence="${sequence}${start_x},${y}_"
         done
-        top_row_front_left_rotation="${top_row_front_left_rotation};"
-        echo "top_row_front_left_rotation=$top_row_front_left_rotation"
+        sequence="${sequence};"
     done
+    echo $sequence
+}
 
-    #points='0,0_0,1_0,2;1,0_1,1_2,1'
+same_wall_rotation_seq_clockwise()
+{
+    sequence=""
+    wall_top_left_x=$1
+    wall_top_left_y=$2
+    for i in {0..2}
+    do
+        start_y=$((wall_top_left_y+i))
+        sequence="${sequence}${wall_top_left_x},${start_y}_"
+    done
+    sequence="${sequence};"
+    for i in {0..2}
+    do
+        start_x=$((wall_top_left_x+i))
+        sequence="${sequence}${start_x},$((wall_top_left_y+2))_"
+    done
+    sequence="${sequence};"
+    for i in {0..2}
+    do
+        start_y=$((wall_top_left_y+2-i))
+        sequence="${sequence}$((wall_top_left_x+2)),${start_y}_"
+    done
+    sequence="${sequence};"
+    for i in {0..2}
+    do
+        start_x=$((wall_top_left_x+2-i))
+        sequence="${sequence}${start_x},${wall_top_left_y}_"
+    done
+    sequence="${sequence};"
+    echo $sequence
+}
 
-    rotate_values_between_points cube $top_row_front_left_rotation
+TOP_WALL_CLOCKWISE_ROTATION=$(same_wall_rotation_seq_clockwise ${TOP_X} ${TOP_Y})
+TOP_ROW_FRONT_LEFT_ROTATION=$(horizontal_rotation_seq "${FRONT_X},${FRONT_Y} ${LEFT_X},${LEFT_Y} ${BACK_X},${BACK_Y} ${RIGHT_X},${RIGHT_Y}")
 
+top_wall_clockwise_rotation()
+{
+    rotate_values_between_points cube $TOP_ROW_FRONT_LEFT_ROTATION
+    rotate_values_between_points cube $TOP_WALL_CLOCKWISE_ROTATION
+    #cube_to_screen $draw_start_rows $draw_start_cols
+}
+
+game ()
+{
     cube_to_screen $draw_start_rows $draw_start_cols
-    print_screen
     print_screen
 }
 
@@ -501,21 +520,23 @@ set_cursor_below_game ()
 
 # execute game loop, then sleep for REFRESH_TIME in a subshell and send SIGALRM to the current process
 # thanks to the trap below it will trigger the game loop again
-#tick() {
-#	tput cup 0 0
-#	handle_input "$key"
-#	game
-#	( sleep $REFRESH_TIME; kill -s ALRM $$ &> /dev/null )&
-#}
-#trap tick ALRM
+tick() {
+	tput cup 0 0
+	handle_input "$key"
+    key="unknown"
+	game
+	( sleep $REFRESH_TIME; kill -s ALRM $$ &> /dev/null )&
+}
+trap tick ALRM
 
 parse_args "$@"
 clear_game_area_screen
+reset_cube
 #print_screen
 # start game
-game
+tick
 # poll for user input in loop
-#for (( ; ; ))
-#do
-#	read -rsn 1 key
-#done
+for (( ; ; ))
+do
+	read -rsn 1 key
+done
