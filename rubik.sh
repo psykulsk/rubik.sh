@@ -174,14 +174,9 @@ handle_input ()
 			REFRESH_TIME=$Y_TIME
 		fi
 	elif [[ "$1" = "$ARROW_RIGHT" ]]; then
-        #echo "test input"
         top_wall_clockwise_rotation
 	elif [[ "$1" = "$ARROW_LEFT" ]]; then
-		if (( vel_x != 1 )); then
-			vel_x=-1
-			vel_y=0
-			REFRESH_TIME=$X_TIME
-		fi
+        top_wall_counter_clockwise_rotation
 	else
 		:
 	fi
@@ -491,6 +486,39 @@ same_wall_rotation_seq_clockwise()
     echo $sequence
 }
 
+same_wall_rotation_seq_counter_clockwise()
+{
+    sequence=""
+    wall_top_left_x=$1
+    wall_top_left_y=$2
+    for i in {0..2}
+    do
+        start_x=$((wall_top_left_x+2-i))
+        sequence="${sequence}${start_x},${wall_top_left_y}_"
+    done
+    sequence="${sequence};"
+    for i in {0..2}
+    do
+        start_y=$((wall_top_left_y+2-i))
+        sequence="${sequence}$((wall_top_left_x+2)),${start_y}_"
+    done
+    sequence="${sequence};"
+    for i in {0..2}
+    do
+        start_x=$((wall_top_left_x+i))
+        sequence="${sequence}${start_x},$((wall_top_left_y+2))_"
+    done
+    sequence="${sequence};"
+    for i in {0..2}
+    do
+        start_y=$((wall_top_left_y+i))
+        sequence="${sequence}${wall_top_left_x},${start_y}_"
+    done
+    sequence="${sequence};"
+    echo $sequence
+}
+
+
 TOP_WALL_CLOCKWISE_ROTATION=$(same_wall_rotation_seq_clockwise ${TOP_X} ${TOP_Y})
 TOP_ROW_FRONT_LEFT_ROTATION=$(horizontal_rotation_seq "${FRONT_X},${FRONT_Y} ${LEFT_X},${LEFT_Y} ${BACK_X},${BACK_Y} ${RIGHT_X},${RIGHT_Y}")
 
@@ -498,7 +526,15 @@ top_wall_clockwise_rotation()
 {
     rotate_values_between_points cube $TOP_ROW_FRONT_LEFT_ROTATION
     rotate_values_between_points cube $TOP_WALL_CLOCKWISE_ROTATION
-    #cube_to_screen $draw_start_rows $draw_start_cols
+}
+
+TOP_WALL_COUNTER_CLOCKWISE_ROTATION=$(same_wall_rotation_seq_counter_clockwise ${TOP_X} ${TOP_Y})
+TOP_ROW_FRONT_RIGHT_ROTATION=$(horizontal_rotation_seq "${RIGHT_X},${RIGHT_Y} ${BACK_X},${BACK_Y} ${LEFT_X},${LEFT_Y} ${FRONT_X},${FRONT_Y}")
+
+top_wall_counter_clockwise_rotation()
+{
+    rotate_values_between_points cube $TOP_WALL_COUNTER_CLOCKWISE_ROTATION
+    rotate_values_between_points cube $TOP_ROW_FRONT_RIGHT_ROTATION
 }
 
 game ()
