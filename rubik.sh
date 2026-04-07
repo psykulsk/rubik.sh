@@ -48,11 +48,12 @@ declare -r ARROW_LEFT="D"
 declare -r HORIZONTAL_BAR="-"
 declare -r VERTICAL_BAR="|"
 declare -r CORNER_ICON="\e[41m \e[0m"
-declare -r WHITE_TEXT="\e[29m"
+declare -r WHITE_TEXT="\e[37m"
 declare -r RED_TEXT="\e[31m"
 declare -r GREEN_TEXT="\e[32m"
 declare -r YELLOW_TEXT="\e[33m"
 declare -r BLUE_TEXT="\e[34m"
+declare -r PINK_TEXT="\e[35m"
 declare -r DIM="\e[2m"
 declare -r GREEN_BG="\e[42m"
 declare -r RESET="\e[0m"
@@ -65,6 +66,7 @@ declare -r GREEN_FULL="${GREEN_TEXT}\u28FF${RESET}"
 declare -r RED_FULL="${RED_TEXT}\u28FF${RESET}"
 declare -r YELLOW_FULL="${YELLOW_TEXT}\u28FF${RESET}"
 declare -r BLUE_FULL="${BLUE_TEXT}\u28FF${RESET}"
+declare -r PINK_FULL="${PINK_TEXT}\u28FF${RESET}"
 declare -r DIM_GREEN_FULL="${DIM}${GREEN_TEXT}\u28FF${RESET}"
 declare -r DIM_RED_FULL="${DIM}${RED_TEXT}\u28FF${RESET}"
 declare -r DIM_YELLOW_FULL="${DIM}${YELLOW_TEXT}\u28FF${RESET}"
@@ -75,6 +77,7 @@ declare -r DIAG_BOT_2="\u281F"
 
 declare -i N_CUBE=3
 
+# isometric cube display constants
 declare -i FRONT_SQUARE_COLS_SIZE=5
 declare -i FRONT_SQUARE_ROWS_SIZE=4
 declare -i TOP_SQUARE_COLS_SIZE=5
@@ -204,26 +207,104 @@ declare -r GREEN="GREEN"
 declare -r WHITE="WHITE"
 declare -r YELLOW="YELLOW"
 declare -r RED="RED"
-declare -r ORANGE="ORANGE"
-declare -A STARTING_COLORS=( $BLUE $GREEN $WHITE $YELLOW $RED $ORANGE )
-declare -A COLOR_MAPPING=( [$BLUE]=$BLUE_FULL [$GREEN]=$GREEN_FULL [$WHITE]=$WHITE_FULL [$YELLOW]=$YELLOW_FULL [$RED]=$RED_FULL [$ORANGE]=$ORANGE_FULL )
+declare -r PINK="PINK"
+declare -A STARTING_COLORS=( $BLUE $GREEN $WHITE $YELLOW $RED $PING)
+declare -A COLOR_MAPPING=( [$BLUE]=$BLUE_FULL [$GREEN]=$GREEN_FULL [$WHITE]=$WHITE_FULL [$YELLOW]=$YELLOW_FULL [$RED]=$RED_FULL [$PINK]=$PINK_FULL )
 
 
 set_color_to_wall_on_cube()
 {
-    #echo "0=$0, 1=$1, 2=$2, 3=$3, 4=$4"
     start_x=$1
     start_y=$2
     color=$3
-    #echo "color=$color"
-    #echo "start_x=$start_x max_x= $(( start_x+N_CUBE ))"
-    #echo "start_y=$start_y max_y= $(( start_y+N_CUBE ))"
 	for (( x=start_x;x<start_x+N_CUBE;x++ )); do
         for (( y=start_y;y<start_y+N_CUBE;y++ )); do
 			cube[$y,$x]=$color
-            #echo "cube [$y, $x] value = ${cube[$y,$x]}"
 		done
 	done
+}
+
+#rotate_top_right() 
+#{
+#   # top rotate around 
+#   # save top row from right wall
+#   # move front row to right wall
+#   # move 
+#   # back 
+#   
+#}
+
+rotate_values_between_points()
+{
+    local -n map_of_values=$1
+    IFS=';' read -r -a arrays_of_points <<< "$2" 
+    echo "arrays_of_points=${arrays_of_points[@]}"
+    first_array_of_points=${arrays_of_points[0]}
+    echo "first_array_of_points=$first_array_of_points"
+    copy_of_first_array_of_values=()
+    copy_values_from_2d_map_to_array map_of_values copy_of_first_array_of_values $first_array_of_points 
+    echo "copy_of_first_array_of_values=${copy_of_first_array_of_values[@]}"
+    copy_values_from_points_to_points_in_2d_map map_of_values arrays_of_points[3] arrays_of_points[0] 
+    copy_values_from_points_to_points_in_2d_map map_of_values arrays_of_points[2] arrays_of_points[3] 
+    copy_values_from_points_to_points_in_2d_map map_of_values arrays_of_points[1] arrays_of_points[2] 
+    set_value_from_array_to_2d_map map_of_values copy_of_first_array_of_values ${arrays_of_points[1]}
+}
+
+copy_values_from_2d_map_to_array()
+{
+    local -n local_map_of_values=$1
+    local -n output_array=$2
+    IFS='_' read -r -a array_of_points leftover <<< $3
+    i=0
+    echo "local_map_of_values=${local_map_of_values[0,0]}"
+    echo "array_of_points=${array_of_points[@]}"
+    for point in ${array_of_points[@]}
+    do
+        # Temporarily change IFS to a comma and read into an array
+        IFS=',' read -r x y leftover <<< $point
+        value=${local_map_of_values[$y,$x]}
+        echo "x=$x, y=$y, i=$i, value=$value"
+        output_array[$i]=$value
+        echo "output_array[@]=${output_array[@]}"
+        i=$((i+1))
+    done
+}
+
+copy_values_from_points_to_points_in_2d_map()
+{
+    local -n local_map_of_values=$1
+    local -n source_points=$2
+    local -n target_points=$3
+    IFS='_' read -r -a array_of_source_points leftover <<< $source_points
+    IFS='_' read -r -a array_of_target_points leftover <<< $target_points
+    echo "array_of_source_points=${array_of_source_points[@]}"
+    echo "array_of_target_points=${array_of_target_points[@]}"
+    for i in 0 1 2
+    do
+        IFS=',' read -r source_x source_y leftover <<< ${array_of_source_points[$i]}
+        IFS=',' read -r target_x target_y leftover <<< ${array_of_target_points[$i]}
+        source_value=${local_map_of_values[$source_y,$source_x]}
+        target_value=${local_map_of_values[$target_y,$target_x]}
+        echo "source_x=$source_x, source_y=$source_y, i=$i, target_x=$target_x, target_y=$target_y source_alue=$source_value target_value=$target_value"
+        local_map_of_values[$target_y,$target_x]=$source_value
+    done
+}
+
+set_value_from_array_to_2d_map()
+{
+    local -n local_map_of_values=$1
+    local -n values=$2
+    IFS='_' read -r -a array_of_points <<< $3
+    i=0
+    for point in ${array_of_points[@]}
+    do
+        IFS=',' read -r x y <<< $point
+        value_before=${local_map_of_values[$y,$x]}
+        value_to_set=${values[$i]}
+        echo "x=$x, y=$y, i=$i, value_before=$value_before,value_to_set=$value_to_set"
+        local_map_of_values[$y,$x]=$value_to_set
+        i=$((i+1))
+    done
 }
 
 reset_cube()
@@ -232,7 +313,7 @@ reset_cube()
     set_color_to_wall_on_cube $LEFT_X $LEFT_Y $WHITE
     set_color_to_wall_on_cube $FRONT_X $FRONT_Y $RED
     set_color_to_wall_on_cube $RIGHT_X $RIGHT_Y $YELLOW
-    set_color_to_wall_on_cube $BACK_X $BACK_Y $ORANGE
+    set_color_to_wall_on_cube $BACK_X $BACK_Y $PINK
     set_color_to_wall_on_cube $BOT_X $BOT_Y $GREEN
 }
 
@@ -377,6 +458,33 @@ game ()
     cube_to_screen $draw_start_rows $draw_start_cols
     #draw_front_square $draw_start_rows $draw_start_cols $GREEN_FULL
 
+    print_screen
+    
+
+    #rotate top row from front left
+    top_row_front_left_rotation=""
+    for row_start_point in "${FRONT_X},${FRONT_Y}" "${LEFT_X},${LEFT_Y}" "${BACK_X},${BACK_Y}" "${RIGHT_X},${RIGHT_Y}"
+    do
+    
+        echo "row_start_point=$row_start_point"
+        IFS=',' read -r x y <<< $row_start_point
+        for i in {0..2}
+        do
+            echo "x=$x, y=$y"
+            start_x=$((x+i))
+            echo "start_x=$start_x"
+            top_row_front_left_rotation="${top_row_front_left_rotation}${start_x},${y}_"
+        done
+        top_row_front_left_rotation="${top_row_front_left_rotation};"
+        echo "top_row_front_left_rotation=$top_row_front_left_rotation"
+    done
+
+    #points='0,0_0,1_0,2;1,0_1,1_2,1'
+
+    rotate_values_between_points cube $top_row_front_left_rotation
+
+    cube_to_screen $draw_start_rows $draw_start_cols
+    print_screen
     print_screen
 }
 
