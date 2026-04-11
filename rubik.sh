@@ -185,18 +185,18 @@ handle_input ()
 		:
 	fi
 }
-declare -i LEFT_Y=${N_CUBE}
-declare -i LEFT_X=0
-declare -i FRONT_Y=${N_CUBE}
-declare -i FRONT_X=$(( 1*${N_CUBE} ))
-declare -i RIGHT_Y=${N_CUBE}
-declare -i RIGHT_X=$(( 2*${N_CUBE} ))
-declare -i BACK_Y=${N_CUBE}
-declare -i BACK_X=$(( 3*${N_CUBE} ))
-declare -i TOP_Y=0
+declare -i LEFT_X=${N_CUBE}
+declare -i LEFT_Y=0
+declare -i FRONT_X=${N_CUBE}
+declare -i FRONT_Y=$(( 1*${N_CUBE} ))
+declare -i RIGHT_X=${N_CUBE}
+declare -i RIGHT_Y=$(( 2*${N_CUBE} ))
+declare -i BACK_X=${N_CUBE}
+declare -i BACK_Y=$(( 3*${N_CUBE} ))
 declare -i TOP_X=0
-declare -i BOT_Y=$(( 2*${N_CUBE} ))
-declare -i BOT_X=0
+declare -i TOP_Y=0
+declare -i BOT_X=$(( 2*${N_CUBE} ))
+declare -i BOT_Y=0
 
 declare -r BLUE="BLUE"
 declare -r GREEN="GREEN"
@@ -216,7 +216,7 @@ set_color_to_wall_on_cube()
     color=$3
 	for (( x=start_x;x<start_x+N_CUBE;x++ )); do
         for (( y=start_y;y<start_y+N_CUBE;y++ )); do
-			cube[$y,$x]=$color
+			cube[$x,$y]=$color
 		done
 	done
 }
@@ -278,7 +278,7 @@ copy_values_from_2d_map_to_array()
     do
         # Temporarily change IFS to a comma and read into an array
         IFS=',' read -r x y leftover <<< $point
-        value=${local_map_of_values[$y,$x]}
+        value=${local_map_of_values[$x,$y]}
         #echo "x=$x, y=$y, i=$i, value=$value"
         output_array[$i]=$value
         #echo "output_array[@]=${output_array[@]}"
@@ -299,10 +299,10 @@ copy_values_from_points_to_points_in_2d_map()
     do
         IFS=',' read -r source_x source_y leftover <<< ${array_of_source_points[$i]}
         IFS=',' read -r target_x target_y leftover <<< ${array_of_target_points[$i]}
-        source_value=${local_map_of_values[$source_y,$source_x]}
-        target_value=${local_map_of_values[$target_y,$target_x]}
+        source_value=${local_map_of_values[$source_x,$source_y]}
+        target_value=${local_map_of_values[$target_x,$target_y]}
         echo "source_x=$source_x, source_y=$source_y, i=$i, target_x=$target_x, target_y=$target_y source_alue=$source_value target_value=$target_value"
-        local_map_of_values[$target_y,$target_x]=$source_value
+        local_map_of_values[$target_x,$target_y]=$source_value
     done
 }
 
@@ -315,10 +315,10 @@ set_value_from_array_to_2d_map()
     for point in ${array_of_points[@]}
     do
         IFS=',' read -r x y <<< $point
-        value_before=${local_map_of_values[$y,$x]}
+        value_before=${local_map_of_values[$x,$y]}
         value_to_set=${values[$i]}
         #echo "setting value x=$x, y=$y, i=$i, value_before=$value_before,value_to_set=$value_to_set"
-        local_map_of_values[$y,$x]=$value_to_set
+        local_map_of_values[$x,$y]=$value_to_set
         i=$((i+1))
     done
 }
@@ -422,7 +422,7 @@ wall_to_screen()
 	for (( x=wall_cube_x;x<wall_cube_x+N_CUBE;x++ )); do
             row_shift=$(( $row_shift_each_y*(x-wall_cube_x) ))
         for (( y=wall_cube_y;y<wall_cube_y+N_CUBE;y++ )); do
-			color=${cube[$y,$x]}
+			color=${cube[$x,$y]}
             color_from_mapping=${COLOR_MAPPING[$color]}
             col_shift=$(( $col_shift_each_x*(y-wall_cube_y) ))
             start_rows=$(( row_shift+wall_start_row+(y-wall_cube_y)*wall_rows_size))
@@ -470,9 +470,9 @@ horizontal_rotation_seq()
         for i in {0..2}
         do
             #echo "x=$x, y=$y"
-            start_x=$((x+i))
+            start_y=$((y+i))
             #echo "start_x=$start_x"
-            sequence="${sequence}${start_x},${y}_"
+            sequence="${sequence}${x},${start_y}_"
         done
         sequence="${sequence};"
     done
@@ -488,8 +488,8 @@ vertical_rotation_seq()
         IFS=',' read -r x y <<< $column_start_point
         for i in {0..2}
         do
-            start_y=$((y+i))
-            sequence="${sequence}${x},${start_y}_"
+            start_x=$((x+i))
+            sequence="${sequence}${start_x},${y}_"
         done
         sequence="${sequence};"
     done
@@ -628,9 +628,9 @@ front_wall_left_col_down_rotation()
 
 game ()
 {
-    #cube_to_screen $draw_start_rows $draw_start_cols
-    #print_screen
-    debug_print_cube
+    cube_to_screen $draw_start_rows $draw_start_cols
+    print_screen
+    #debug_print_cube
 }
 
 set_pixel ()
@@ -647,7 +647,7 @@ set_cursor_below_game ()
 # execute game loop, then sleep for REFRESH_TIME in a subshell and send SIGALRM to the current process
 # thanks to the trap below it will trigger the game loop again
 tick() {
-	#tput cup 0 0
+	tput cup 0 0
 	handle_input "$key"
     key="unknown"
 	game
