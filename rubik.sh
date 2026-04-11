@@ -41,6 +41,10 @@ key=""
 
 # constants
 declare -r EMPTY=" "
+declare -r UPPERCASE_U="U"
+declare -r LOWERCASE_U="u"
+declare -r UPPERCASE_B="B"
+declare -r LOWERCASE_B="b"
 declare -r ARROW_UP="A"
 declare -r ARROW_DOWN="B"
 declare -r ARROW_RIGHT="C"
@@ -161,22 +165,22 @@ print_screen ()
 
 handle_input ()
 {
-	if [[ "$1" = "$ARROW_UP" ]]; then
-		if (( vel_y != 1 )); then
-			vel_x=0
-			vel_y=-1
-			REFRESH_TIME=$Y_TIME
-		fi
-	elif [[ "$1" = "$ARROW_DOWN" ]]; then
-		if (( vel_y != -1 )); then
-			vel_x=0
-			vel_y=1
-			REFRESH_TIME=$Y_TIME
-		fi
-	elif [[ "$1" = "$ARROW_RIGHT" ]]; then
-        top_wall_clockwise_rotation
-	elif [[ "$1" = "$ARROW_LEFT" ]]; then
+	if [[ "$1" = "T" ]]; then
         top_wall_counter_clockwise_rotation
+	elif [[ "$1" = "t" ]]; then
+        top_wall_clockwise_rotation
+	elif [[ "$1" = "G" ]]; then
+        mid_wall_counter_clockwise_rotation
+	elif [[ "$1" = "g" ]]; then
+        mid_wall_clockwise_rotation
+	elif [[ "$1" = "B" ]]; then
+        bot_wall_counter_clockwise_rotation
+	elif [[ "$1" = "b" ]]; then
+        bot_wall_clockwise_rotation
+	elif [[ "$1" = "Y" ]]; then
+        front_wall_left_col_down_rotation
+	elif [[ "$1" = "y" ]]; then
+        front_wall_left_col_up_rotation
 	else
 		:
 	fi
@@ -200,6 +204,7 @@ declare -r WHITE="WHITE"
 declare -r YELLOW="YELLOW"
 declare -r RED="RED"
 declare -r PINK="PINK"
+declare -r UNSET="___"
 declare -A STARTING_COLORS=( $BLUE $GREEN $WHITE $YELLOW $RED $PING)
 declare -A COLOR_MAPPING=( [$BLUE]=$BLUE_FULL [$GREEN]=$GREEN_FULL [$WHITE]=$WHITE_FULL [$YELLOW]=$YELLOW_FULL [$RED]=$RED_FULL [$PINK]=$PINK_FULL )
 
@@ -212,6 +217,25 @@ set_color_to_wall_on_cube()
 	for (( x=start_x;x<start_x+N_CUBE;x++ )); do
         for (( y=start_y;y<start_y+N_CUBE;y++ )); do
 			cube[$y,$x]=$color
+		done
+	done
+}
+
+debug_print_cube()
+{
+	for (( x=0;x<N_CUBE*3;x++ )); do
+        for (( y=0;y<N_CUBE*4;y++ )); do
+            printf "|%-7s| " "${cube[$x,$y]}"
+		done
+        printf "\n"
+	done
+}
+
+set_cube_unset()
+{
+	for (( x=0;x<N_CUBE*3;x++ )); do
+        for (( y=0;y<N_CUBE*4;y++ )); do
+            cube[$x,$y]=$UNSET
 		done
 	done
 }
@@ -232,10 +256,10 @@ rotate_values_between_points()
     IFS=';' read -r -a arrays_of_points <<< "$2" 
     #echo "arrays_of_points=${arrays_of_points[@]}"
     first_array_of_points=${arrays_of_points[0]}
-    #echo "first_array_of_points=$first_array_of_points"
+    echo "first_array_of_points=$first_array_of_points"
     copy_of_first_array_of_values=()
     copy_values_from_2d_map_to_array map_of_values copy_of_first_array_of_values $first_array_of_points 
-    #echo "copy_of_first_array_of_values=${copy_of_first_array_of_values[@]}"
+    echo "copy_of_first_array_of_values=${copy_of_first_array_of_values[@]}"
     copy_values_from_points_to_points_in_2d_map map_of_values arrays_of_points[3] arrays_of_points[0] 
     copy_values_from_points_to_points_in_2d_map map_of_values arrays_of_points[2] arrays_of_points[3] 
     copy_values_from_points_to_points_in_2d_map map_of_values arrays_of_points[1] arrays_of_points[2] 
@@ -269,15 +293,15 @@ copy_values_from_points_to_points_in_2d_map()
     local -n target_points=$3
     IFS='_' read -r -a array_of_source_points leftover <<< $source_points
     IFS='_' read -r -a array_of_target_points leftover <<< $target_points
-    #echo "array_of_source_points=${array_of_source_points[@]}"
-    #echo "array_of_target_points=${array_of_target_points[@]}"
+    echo "array_of_source_points=${array_of_source_points[@]}"
+    echo "array_of_target_points=${array_of_target_points[@]}"
     for i in 0 1 2
     do
         IFS=',' read -r source_x source_y leftover <<< ${array_of_source_points[$i]}
         IFS=',' read -r target_x target_y leftover <<< ${array_of_target_points[$i]}
         source_value=${local_map_of_values[$source_y,$source_x]}
         target_value=${local_map_of_values[$target_y,$target_x]}
-        #echo "source_x=$source_x, source_y=$source_y, i=$i, target_x=$target_x, target_y=$target_y source_alue=$source_value target_value=$target_value"
+        echo "source_x=$source_x, source_y=$source_y, i=$i, target_x=$target_x, target_y=$target_y source_alue=$source_value target_value=$target_value"
         local_map_of_values[$target_y,$target_x]=$source_value
     done
 }
@@ -301,6 +325,7 @@ set_value_from_array_to_2d_map()
 
 reset_cube()
 {
+    set_cube_unset
     set_color_to_wall_on_cube $TOP_X $TOP_Y $BLUE
     set_color_to_wall_on_cube $LEFT_X $LEFT_Y $WHITE
     set_color_to_wall_on_cube $FRONT_X $FRONT_Y $RED
@@ -454,6 +479,24 @@ horizontal_rotation_seq()
     echo $sequence
 }
 
+vertical_rotation_seq()
+{
+    sequence=""
+    for column_start_point in $1
+    do
+    
+        IFS=',' read -r x y <<< $column_start_point
+        for i in {0..2}
+        do
+            start_y=$((y+i))
+            sequence="${sequence}${x},${start_y}_"
+        done
+        sequence="${sequence};"
+    done
+    echo $sequence
+}
+
+
 same_wall_rotation_seq_clockwise()
 {
     sequence=""
@@ -493,6 +536,12 @@ same_wall_rotation_seq_counter_clockwise()
     wall_top_left_y=$2
     for i in {0..2}
     do
+        start_y=$((wall_top_left_y+i))
+        sequence="${sequence}${wall_top_left_x},${start_y}_"
+    done
+    sequence="${sequence};"
+    for i in {0..2}
+    do
         start_x=$((wall_top_left_x+2-i))
         sequence="${sequence}${start_x},${wall_top_left_y}_"
     done
@@ -507,12 +556,6 @@ same_wall_rotation_seq_counter_clockwise()
     do
         start_x=$((wall_top_left_x+i))
         sequence="${sequence}${start_x},$((wall_top_left_y+2))_"
-    done
-    sequence="${sequence};"
-    for i in {0..2}
-    do
-        start_y=$((wall_top_left_y+i))
-        sequence="${sequence}${wall_top_left_x},${start_y}_"
     done
     sequence="${sequence};"
     echo $sequence
@@ -537,10 +580,57 @@ top_wall_counter_clockwise_rotation()
     rotate_values_between_points cube $TOP_ROW_FRONT_RIGHT_ROTATION
 }
 
+BOT_ROW_Y_SHIFT=2
+BOT_WALL_COUNTER_CLOCKWISE_ROTATION=$(same_wall_rotation_seq_counter_clockwise ${BOT_X} ${BOT_Y})
+BOT_ROW_FRONT_RIGHT_ROTATION=$(horizontal_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y+BOT_ROW_Y_SHIFT )) $(( BACK_X )),$(( BACK_Y + BOT_ROW_Y_SHIFT )) $(( LEFT_X )),$(( LEFT_Y + BOT_ROW_Y_SHIFT )) $(( FRONT_X )),$(( FRONT_Y + BOT_ROW_Y_SHIFT))")
+bot_wall_counter_clockwise_rotation()
+{
+    rotate_values_between_points cube $BOT_WALL_COUNTER_CLOCKWISE_ROTATION
+    rotate_values_between_points cube $BOT_ROW_FRONT_RIGHT_ROTATION
+}
+
+BOT_WALL_CLOCKWISE_ROTATION=$(same_wall_rotation_seq_clockwise ${BOT_X} ${BOT_Y})
+BOT_ROW_FRONT_LEFT_ROTATION=$(horizontal_rotation_seq "$(( FRONT_X )),$(( FRONT_Y + BOT_ROW_Y_SHIFT)) $(( LEFT_X )),$(( LEFT_Y + BOT_ROW_Y_SHIFT )) $(( BACK_X )),$(( BACK_Y + BOT_ROW_Y_SHIFT )) $(( RIGHT_X )),$(( RIGHT_Y+BOT_ROW_Y_SHIFT ))")
+bot_wall_clockwise_rotation()
+{
+    rotate_values_between_points cube $BOT_WALL_CLOCKWISE_ROTATION
+    rotate_values_between_points cube $BOT_ROW_FRONT_LEFT_ROTATION
+}
+
+MID_ROW_Y_SHIFT=1
+MID_ROW_FRONT_RIGHT_ROTATION=$(horizontal_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y+MID_ROW_Y_SHIFT )) $(( BACK_X )),$(( BACK_Y + MID_ROW_Y_SHIFT )) $(( LEFT_X )),$(( LEFT_Y + MID_ROW_Y_SHIFT )) $(( FRONT_X )),$(( FRONT_Y + MID_ROW_Y_SHIFT))")
+mid_wall_counter_clockwise_rotation()
+{
+    rotate_values_between_points cube $MID_ROW_FRONT_RIGHT_ROTATION
+}
+
+MID_ROW_FRONT_LEFT_ROTATION=$(horizontal_rotation_seq "$(( FRONT_X )),$(( FRONT_Y + MID_ROW_Y_SHIFT)) $(( LEFT_X )),$(( LEFT_Y + MID_ROW_Y_SHIFT )) $(( BACK_X )),$(( BACK_Y + MID_ROW_Y_SHIFT )) $(( RIGHT_X )),$(( RIGHT_Y+MID_ROW_Y_SHIFT ))")
+mid_wall_clockwise_rotation()
+{
+    rotate_values_between_points cube $MID_ROW_FRONT_LEFT_ROTATION
+}
+
+FRONT_LEFT_COL_WALL_UP_ROTATION=$(same_wall_rotation_seq_counter_clockwise ${LEFT_X} ${LEFT_Y})
+FRONT_LEFT_COL_UP_ROTATION=$(vertical_rotation_seq "$(( FRONT_X )),$(( FRONT_Y )) $(( TOP_X )),$(( TOP_Y )) $(( BACK_X )),$(( BACK_Y )) $(( BOT_X )),$(( BOT_Y ))")
+front_wall_left_col_up_rotation()
+{
+    rotate_values_between_points cube $FRONT_LEFT_COL_WALL_UP_ROTATION
+    rotate_values_between_points cube $FRONT_LEFT_COL_UP_ROTATION
+}
+
+FRONT_LEFT_COL_WALL_DOWN_ROTATION=$(same_wall_rotation_seq_clockwise ${LEFT_X} ${LEFT_Y})
+FRONT_LEFT_COL_DOWN_ROTATION=$(vertical_rotation_seq "$(( FRONT_X )),$(( FRONT_Y )) $(( BOT_X )),$(( BOT_Y )) $(( BACK_X )),$(( BACK_Y )) $(( TOP_X )),$(( TOP_Y ))")
+front_wall_left_col_down_rotation()
+{
+    rotate_values_between_points cube $FRONT_LEFT_COL_WALL_DOWN_ROTATION
+    rotate_values_between_points cube $FRONT_LEFT_COL_DOWN_ROTATION
+}
+
 game ()
 {
-    cube_to_screen $draw_start_rows $draw_start_cols
-    print_screen
+    #cube_to_screen $draw_start_rows $draw_start_cols
+    #print_screen
+    debug_print_cube
 }
 
 set_pixel ()
@@ -557,7 +647,7 @@ set_cursor_below_game ()
 # execute game loop, then sleep for REFRESH_TIME in a subshell and send SIGALRM to the current process
 # thanks to the trap below it will trigger the game loop again
 tick() {
-	tput cup 0 0
+	#tput cup 0 0
 	handle_input "$key"
     key="unknown"
 	game
@@ -566,11 +656,15 @@ tick() {
 trap tick ALRM
 
 parse_args "$@"
+set -euo pipefail
 clear_game_area_screen
 reset_cube
+#cube[$(( FRONT_Y+1 )),$(( FRONT_X+2))]=$WHITE
 #print_screen
 # start game
 tick
+#echo $TOP_WALL_CLOCKWISE_ROTATION
+#echo $TOP_WALL_COUNTER_CLOCKWISE_ROTATION
 # poll for user input in loop
 for (( ; ; ))
 do
