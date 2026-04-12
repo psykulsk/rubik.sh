@@ -183,6 +183,22 @@ handle_input ()
         front_wall_left_col_down_rotation
 	elif [[ "$1" = "y" ]]; then
         front_wall_left_col_up_rotation
+	elif [[ "$1" = "U" ]]; then
+        front_wall_mid_col_down_rotation
+	elif [[ "$1" = "u" ]]; then
+        front_wall_mid_col_up_rotation
+	elif [[ "$1" = "I" ]]; then
+        front_wall_right_col_down_rotation
+	elif [[ "$1" = "i" ]]; then
+        front_wall_right_col_up_rotation
+	elif [[ "$1" = "O" ]]; then
+        right_wall_mid_col_down_rotation
+	elif [[ "$1" = "o" ]]; then
+        right_wall_mid_col_up_rotation
+	elif [[ "$1" = "P" ]]; then
+        right_wall_right_col_down_rotation
+	elif [[ "$1" = "p" ]]; then
+        right_wall_right_col_up_rotation
 	else
 		:
 	fi
@@ -431,7 +447,9 @@ wall_to_screen()
 	for (( x=wall_cube_x;x<wall_cube_x+N_CUBE;x++ )); do
         for (( y=wall_cube_y;y<wall_cube_y+N_CUBE;y++ )); do
             row_shift=$(( $row_shift_each_y*(y-wall_cube_y) ))
+            echo "x=$x y=$y"
 			color=${cube[$x,$y]}
+            echo "color=$color"
             color_from_mapping=${COLOR_MAPPING[$color]}
             col_shift=$(( $col_shift_each_x*(x-wall_cube_x) ))
             start_rows=$(( row_shift+wall_start_row+(x-wall_cube_x)*wall_rows_size))
@@ -502,6 +520,47 @@ vertical_rotation_seq()
         done
         sequence="${sequence};"
     done
+    echo $sequence
+}
+
+mixed_rotation_seq()
+{
+    sequence=""
+    
+    IFS=' ' read -r point_1 point_2 point_3 point_4 <<< $1
+    #starting with vertical
+    IFS=',' read -r x y <<< $point_1
+    for i in {0..2}
+    do
+        start_x=$((x+i))
+        sequence="${sequence}${start_x},${y}_"
+    done
+    sequence="${sequence};"
+    #horizontal
+    IFS=',' read -r x y <<< $point_2
+    for i in {0..2}
+    do
+        start_y=$((y+i))
+        sequence="${sequence}${x},${start_y}_"
+    done
+    sequence="${sequence};"
+    #vertical
+    IFS=',' read -r x y <<< $point_3
+    for i in {0..2}
+    do
+        start_x=$((x+i))
+        sequence="${sequence}${start_x},${y}_"
+    done
+    sequence="${sequence};"
+    #horizontal
+    IFS=',' read -r x y <<< $point_4
+    for i in {0..2}
+    do
+        start_y=$((y+i))
+        sequence="${sequence}${x},${start_y}_"
+    done
+    sequence="${sequence};"
+
     echo $sequence
 }
 
@@ -633,6 +692,64 @@ front_wall_left_col_down_rotation()
 {
     rotate_values_between_points cube $FRONT_LEFT_COL_WALL_DOWN_ROTATION
     rotate_values_between_points cube $FRONT_LEFT_COL_DOWN_ROTATION
+}
+
+MID_ROW_Y_SHIFT=1
+FRONT_MID_COL_UP_ROTATION=$(vertical_rotation_seq "$(( FRONT_X )),$(( FRONT_Y + MID_ROW_Y_SHIFT )) $(( TOP_X )),$(( TOP_Y + MID_ROW_Y_SHIFT )) $(( BACK_X )),$(( BACK_Y + MID_ROW_Y_SHIFT )) $(( BOT_X )),$(( BOT_Y + MID_ROW_Y_SHIFT ))")
+front_wall_mid_col_up_rotation()
+{
+    rotate_values_between_points cube $FRONT_MID_COL_UP_ROTATION
+}
+
+FRONT_MID_COL_DOWN_ROTATION=$(vertical_rotation_seq "$(( FRONT_X )),$(( FRONT_Y + MID_ROW_Y_SHIFT )) $(( BOT_X )),$(( BOT_Y + MID_ROW_Y_SHIFT )) $(( BACK_X )),$(( BACK_Y + MID_ROW_Y_SHIFT )) $(( TOP_X )),$(( TOP_Y + MID_ROW_Y_SHIFT ))")
+front_wall_mid_col_down_rotation()
+{
+    rotate_values_between_points cube $FRONT_MID_COL_DOWN_ROTATION
+}
+
+RIGHT_ROW_Y_SHIFT=2
+FRONT_RIGHT_COL_WALL_UP_ROTATION=$(same_wall_rotation_seq_counter_clockwise ${RIGHT_X} ${RIGHT_Y})
+FRONT_RIGHT_COL_UP_ROTATION=$(vertical_rotation_seq "$(( FRONT_X )),$(( FRONT_Y + RIGHT_ROW_Y_SHIFT )) $(( TOP_X )),$(( TOP_Y + RIGHT_ROW_Y_SHIFT )) $(( BACK_X )),$(( BACK_Y + RIGHT_ROW_Y_SHIFT )) $(( BOT_X )),$(( BOT_Y + RIGHT_ROW_Y_SHIFT ))")
+front_wall_right_col_up_rotation()
+{
+    rotate_values_between_points cube $FRONT_RIGHT_COL_WALL_UP_ROTATION
+    rotate_values_between_points cube $FRONT_RIGHT_COL_UP_ROTATION
+}
+
+FRONT_RIGHT_COL_WALL_DOWN_ROTATION=$(same_wall_rotation_seq_clockwise ${RIGHT_X} ${RIGHT_Y})
+FRONT_RIGHT_COL_DOWN_ROTATION=$(vertical_rotation_seq "$(( FRONT_X )),$(( FRONT_Y + RIGHT_ROW_Y_SHIFT )) $(( BOT_X )),$(( BOT_Y + RIGHT_ROW_Y_SHIFT )) $(( BACK_X )),$(( BACK_Y + RIGHT_ROW_Y_SHIFT )) $(( TOP_X )),$(( TOP_Y + RIGHT_ROW_Y_SHIFT ))")
+front_wall_right_col_down_rotation()
+{
+    rotate_values_between_points cube $FRONT_RIGHT_COL_WALL_DOWN_ROTATION
+    rotate_values_between_points cube $FRONT_RIGHT_COL_DOWN_ROTATION
+}
+
+RIGHT_MID_COL_UP_ROTATION=$(mixed_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y + MID_ROW_Y_SHIFT )) $(( TOP_X )),$(( TOP_Y + MID_ROW_Y_SHIFT )) $(( LEFT_X )),$(( LEFT_Y + MID_ROW_Y_SHIFT )) $(( BOT_X )),$(( BOT_Y + MID_ROW_Y_SHIFT ))")
+right_wall_mid_col_up_rotation()
+{
+    rotate_values_between_points cube $RIGHT_MID_COL_UP_ROTATION
+}
+
+RIGHT_MID_COL_DOWN_ROTATION=$(mixed_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y + MID_ROW_Y_SHIFT )) $(( BOT_X )),$(( BOT_Y + MID_ROW_Y_SHIFT )) $(( LEFT_X )),$(( LEFT_Y + MID_ROW_Y_SHIFT )) $(( TOP_X )),$(( TOP_Y + MID_ROW_Y_SHIFT ))")
+right_wall_mid_col_down_rotation()
+{
+    rotate_values_between_points cube $RIGHT_MID_COL_DOWN_ROTATION
+}
+
+RIGHT_RIGHT_COL_WALL_UP_ROTATION=$(same_wall_rotation_seq_clockwise ${BACK_X} ${BACK_Y})
+RIGHT_RIGHT_COL_UP_ROTATION=$(mixed_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y + RIGHT_ROW_Y_SHIFT )) $(( TOP_X )),$(( TOP_Y + RIGHT_ROW_Y_SHIFT )) $(( LEFT_X )),$(( LEFT_Y + RIGHT_ROW_Y_SHIFT )) $(( BOT_X )),$(( BOT_Y + RIGHT_ROW_Y_SHIFT ))")
+right_wall_right_col_up_rotation()
+{
+    rotate_values_between_points cube $RIGHT_RIGHT_COL_WALL_UP_ROTATION
+    rotate_values_between_points cube $RIGHT_RIGHT_COL_UP_ROTATION
+}
+
+RIGHT_RIGHT_COL_WALL_DOWN_ROTATION=$(same_wall_rotation_seq_counter_clockwise ${BACK_X} ${BACK_Y})
+RIGHT_RIGHT_COL_DOWN_ROTATION=$(mixed_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y + RIGHT_ROW_Y_SHIFT )) $(( BOT_X )),$(( BOT_Y + RIGHT_ROW_Y_SHIFT )) $(( LEFT_X )),$(( LEFT_Y + RIGHT_ROW_Y_SHIFT )) $(( TOP_X )),$(( TOP_Y + RIGHT_ROW_Y_SHIFT ))")
+right_wall_right_col_down_rotation()
+{
+    rotate_values_between_points cube $RIGHT_RIGHT_COL_WALL_DOWN_ROTATION
+    rotate_values_between_points cube $RIGHT_RIGHT_COL_DOWN_ROTATION
 }
 
 game ()
