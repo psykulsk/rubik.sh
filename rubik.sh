@@ -257,15 +257,21 @@ rotate_values_between_points()
     local -n map_of_values=$1
     IFS=';' read -r -a arrays_of_points <<< "$2" 
     #echo "arrays_of_points=${arrays_of_points[@]}"
-    first_array_of_points=${arrays_of_points[0]}
+    #first_array_of_points=${arrays_of_points[0]}
     #echo "first_array_of_points=$first_array_of_points"
-    copy_of_first_array_of_values=()
-    copy_values_from_2d_map_to_array map_of_values copy_of_first_array_of_values $first_array_of_points 
-    #echo "copy_of_first_array_of_values=${copy_of_first_array_of_values[@]}"
-    copy_values_from_points_to_points_in_2d_map map_of_values arrays_of_points[3] arrays_of_points[0] 
-    copy_values_from_points_to_points_in_2d_map map_of_values arrays_of_points[2] arrays_of_points[3] 
-    copy_values_from_points_to_points_in_2d_map map_of_values arrays_of_points[1] arrays_of_points[2] 
-    set_value_from_array_to_2d_map map_of_values copy_of_first_array_of_values ${arrays_of_points[1]}
+    values_copy_0=()
+    copy_values_from_2d_map_to_array map_of_values values_copy_0 ${arrays_of_points[0]}
+    values_copy_1=()
+    copy_values_from_2d_map_to_array map_of_values values_copy_1 ${arrays_of_points[1]}
+    values_copy_2=()
+    copy_values_from_2d_map_to_array map_of_values values_copy_2 ${arrays_of_points[2]}
+    values_copy_3=()
+    #echo "values_copy_0=$values_copy_0[@]"
+    copy_values_from_2d_map_to_array map_of_values values_copy_3 ${arrays_of_points[3]}
+    set_value_from_array_to_2d_map map_of_values values_copy_0 ${arrays_of_points[1]}
+    set_value_from_array_to_2d_map map_of_values values_copy_1 ${arrays_of_points[2]}
+    set_value_from_array_to_2d_map map_of_values values_copy_2 ${arrays_of_points[3]}
+    set_value_from_array_to_2d_map map_of_values values_copy_3 ${arrays_of_points[0]}
 }
 
 copy_values_from_2d_map_to_array()
