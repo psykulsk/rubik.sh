@@ -429,23 +429,23 @@ wall_to_screen()
     row_shift_each_y=$8
     col_shift_each_x=$9
 	for (( x=wall_cube_x;x<wall_cube_x+N_CUBE;x++ )); do
-            row_shift=$(( $row_shift_each_y*(x-wall_cube_x) ))
         for (( y=wall_cube_y;y<wall_cube_y+N_CUBE;y++ )); do
+            row_shift=$(( $row_shift_each_y*(y-wall_cube_y) ))
 			color=${cube[$x,$y]}
             color_from_mapping=${COLOR_MAPPING[$color]}
-            col_shift=$(( $col_shift_each_x*(y-wall_cube_y) ))
-            start_rows=$(( row_shift+wall_start_row+(y-wall_cube_y)*wall_rows_size))
-            start_cols=$(( col_shift+wall_start_cols+(x-wall_cube_x)*wall_cols_size))
+            col_shift=$(( $col_shift_each_x*(x-wall_cube_x) ))
+            start_rows=$(( row_shift+wall_start_row+(x-wall_cube_x)*wall_rows_size))
+            start_cols=$(( col_shift+wall_start_cols+(y-wall_cube_y)*wall_cols_size))
             color_to_set=$color_from_mapping
-            if (( (y-wall_cube_y) % 2 == 1 )); then
-                if (( (x-wall_cube_x) % 2 == 1 )); then
-                    color_to_set=$DIM$color_from_mapping
-                fi
-            else 
-                if (( (x-wall_cube_x) % 2 == 0 )); then
-                    color_to_set=$DIM$color_from_mapping
-                fi
-            fi
+            #if (( (y-wall_cube_y) % 2 == 1 )); then
+            #    if (( (x-wall_cube_x) % 2 == 1 )); then
+            #        color_to_set=$DIM$color_from_mapping
+            #    fi
+            #else 
+            #    if (( (x-wall_cube_x) % 2 == 0 )); then
+            #        color_to_set=$DIM$color_from_mapping
+            #    fi
+            #fi
             $draw_method $start_rows $start_cols $color_to_set
 		done
 	done
@@ -637,9 +637,9 @@ front_wall_left_col_down_rotation()
 
 game ()
 {
-    #cube_to_screen $draw_start_rows $draw_start_cols
-    #print_screen
-    debug_print_cube
+    cube_to_screen $draw_start_rows $draw_start_cols
+    print_screen
+    #debug_print_cube
 }
 
 set_pixel ()
