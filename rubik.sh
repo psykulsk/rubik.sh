@@ -14,6 +14,8 @@ if [[ $? -ne 0 ]]; then
 	exit 1
 fi
 
+set -euo pipefail
+
 # remove highlighted terminal cursor
 tput civis
 # reset to normal on exit
@@ -194,9 +196,9 @@ declare -i RIGHT_Y=$(( 2*${N_CUBE} ))
 declare -i BACK_X=${N_CUBE}
 declare -i BACK_Y=$(( 3*${N_CUBE} ))
 declare -i TOP_X=0
-declare -i TOP_Y=0
+declare -i TOP_Y=${N_CUBE}
 declare -i BOT_X=$(( 2*${N_CUBE} ))
-declare -i BOT_Y=0
+declare -i BOT_Y=${N_CUBE}
 
 declare -r BLUE="BLUE"
 declare -r GREEN="GREEN"
@@ -205,7 +207,7 @@ declare -r YELLOW="YELLOW"
 declare -r RED="RED"
 declare -r PINK="PINK"
 declare -r UNSET="___"
-declare -A STARTING_COLORS=( $BLUE $GREEN $WHITE $YELLOW $RED $PING)
+declare -A STARTING_COLORS=( $BLUE $GREEN $WHITE $YELLOW $RED $PINK)
 declare -A COLOR_MAPPING=( [$BLUE]=$BLUE_FULL [$GREEN]=$GREEN_FULL [$WHITE]=$WHITE_FULL [$YELLOW]=$YELLOW_FULL [$RED]=$RED_FULL [$PINK]=$PINK_FULL )
 
 
@@ -256,10 +258,10 @@ rotate_values_between_points()
     IFS=';' read -r -a arrays_of_points <<< "$2" 
     #echo "arrays_of_points=${arrays_of_points[@]}"
     first_array_of_points=${arrays_of_points[0]}
-    echo "first_array_of_points=$first_array_of_points"
+    #echo "first_array_of_points=$first_array_of_points"
     copy_of_first_array_of_values=()
     copy_values_from_2d_map_to_array map_of_values copy_of_first_array_of_values $first_array_of_points 
-    echo "copy_of_first_array_of_values=${copy_of_first_array_of_values[@]}"
+    #echo "copy_of_first_array_of_values=${copy_of_first_array_of_values[@]}"
     copy_values_from_points_to_points_in_2d_map map_of_values arrays_of_points[3] arrays_of_points[0] 
     copy_values_from_points_to_points_in_2d_map map_of_values arrays_of_points[2] arrays_of_points[3] 
     copy_values_from_points_to_points_in_2d_map map_of_values arrays_of_points[1] arrays_of_points[2] 
@@ -293,15 +295,16 @@ copy_values_from_points_to_points_in_2d_map()
     local -n target_points=$3
     IFS='_' read -r -a array_of_source_points leftover <<< $source_points
     IFS='_' read -r -a array_of_target_points leftover <<< $target_points
-    echo "array_of_source_points=${array_of_source_points[@]}"
-    echo "array_of_target_points=${array_of_target_points[@]}"
+    #echo "array_of_source_points=${array_of_source_points[@]}"
+    #echo "array_of_target_points=${array_of_target_points[@]}"
     for i in 0 1 2
     do
         IFS=',' read -r source_x source_y leftover <<< ${array_of_source_points[$i]}
         IFS=',' read -r target_x target_y leftover <<< ${array_of_target_points[$i]}
+        #echo "source_x=$source_x, source_y=$source_y"
         source_value=${local_map_of_values[$source_x,$source_y]}
         target_value=${local_map_of_values[$target_x,$target_y]}
-        echo "source_x=$source_x, source_y=$source_y, i=$i, target_x=$target_x, target_y=$target_y source_alue=$source_value target_value=$target_value"
+        #echo "source_x=$source_x, source_y=$source_y, i=$i, target_x=$target_x, target_y=$target_y source_alue=$source_value target_value=$target_value"
         local_map_of_values[$target_x,$target_y]=$source_value
     done
 }
@@ -580,9 +583,9 @@ top_wall_counter_clockwise_rotation()
     rotate_values_between_points cube $TOP_ROW_FRONT_RIGHT_ROTATION
 }
 
-BOT_ROW_Y_SHIFT=2
+BOT_ROW_X_SHIFT=2
 BOT_WALL_COUNTER_CLOCKWISE_ROTATION=$(same_wall_rotation_seq_counter_clockwise ${BOT_X} ${BOT_Y})
-BOT_ROW_FRONT_RIGHT_ROTATION=$(horizontal_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y+BOT_ROW_Y_SHIFT )) $(( BACK_X )),$(( BACK_Y + BOT_ROW_Y_SHIFT )) $(( LEFT_X )),$(( LEFT_Y + BOT_ROW_Y_SHIFT )) $(( FRONT_X )),$(( FRONT_Y + BOT_ROW_Y_SHIFT))")
+BOT_ROW_FRONT_RIGHT_ROTATION=$(horizontal_rotation_seq "$(( RIGHT_X + BOT_ROW_X_SHIFT )),$(( RIGHT_Y )) $(( BACK_X + BOT_ROW_X_SHIFT )),$(( BACK_Y )) $(( LEFT_X + BOT_ROW_X_SHIFT )),$(( LEFT_Y )) $(( FRONT_X + BOT_ROW_X_SHIFT )),$(( FRONT_Y ))")
 bot_wall_counter_clockwise_rotation()
 {
     rotate_values_between_points cube $BOT_WALL_COUNTER_CLOCKWISE_ROTATION
@@ -590,21 +593,21 @@ bot_wall_counter_clockwise_rotation()
 }
 
 BOT_WALL_CLOCKWISE_ROTATION=$(same_wall_rotation_seq_clockwise ${BOT_X} ${BOT_Y})
-BOT_ROW_FRONT_LEFT_ROTATION=$(horizontal_rotation_seq "$(( FRONT_X )),$(( FRONT_Y + BOT_ROW_Y_SHIFT)) $(( LEFT_X )),$(( LEFT_Y + BOT_ROW_Y_SHIFT )) $(( BACK_X )),$(( BACK_Y + BOT_ROW_Y_SHIFT )) $(( RIGHT_X )),$(( RIGHT_Y+BOT_ROW_Y_SHIFT ))")
+BOT_ROW_FRONT_LEFT_ROTATION=$(horizontal_rotation_seq "$(( FRONT_X + BOT_ROW_X_SHIFT )),$(( FRONT_Y )) $(( LEFT_X + BOT_ROW_X_SHIFT )),$(( LEFT_Y )) $(( BACK_X + BOT_ROW_X_SHIFT )),$(( BACK_Y )) $(( RIGHT_X + BOT_ROW_X_SHIFT )),$(( RIGHT_Y ))")
 bot_wall_clockwise_rotation()
 {
     rotate_values_between_points cube $BOT_WALL_CLOCKWISE_ROTATION
     rotate_values_between_points cube $BOT_ROW_FRONT_LEFT_ROTATION
 }
 
-MID_ROW_Y_SHIFT=1
-MID_ROW_FRONT_RIGHT_ROTATION=$(horizontal_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y+MID_ROW_Y_SHIFT )) $(( BACK_X )),$(( BACK_Y + MID_ROW_Y_SHIFT )) $(( LEFT_X )),$(( LEFT_Y + MID_ROW_Y_SHIFT )) $(( FRONT_X )),$(( FRONT_Y + MID_ROW_Y_SHIFT))")
+MID_ROW_X_SHIFT=1
+MID_ROW_FRONT_RIGHT_ROTATION=$(horizontal_rotation_seq "$(( RIGHT_X + MID_ROW_X_SHIFT )),$(( RIGHT_Y )) $(( BACK_X + MID_ROW_X_SHIFT )),$(( BACK_Y )) $(( LEFT_X + MID_ROW_X_SHIFT )),$(( LEFT_Y )) $(( FRONT_X + MID_ROW_X_SHIFT )),$(( FRONT_Y ))")
 mid_wall_counter_clockwise_rotation()
 {
     rotate_values_between_points cube $MID_ROW_FRONT_RIGHT_ROTATION
 }
 
-MID_ROW_FRONT_LEFT_ROTATION=$(horizontal_rotation_seq "$(( FRONT_X )),$(( FRONT_Y + MID_ROW_Y_SHIFT)) $(( LEFT_X )),$(( LEFT_Y + MID_ROW_Y_SHIFT )) $(( BACK_X )),$(( BACK_Y + MID_ROW_Y_SHIFT )) $(( RIGHT_X )),$(( RIGHT_Y+MID_ROW_Y_SHIFT ))")
+MID_ROW_FRONT_LEFT_ROTATION=$(horizontal_rotation_seq "$(( FRONT_X + MID_ROW_X_SHIFT )),$(( FRONT_Y )) $(( LEFT_X + MID_ROW_X_SHIFT )),$(( LEFT_Y )) $(( BACK_X + MID_ROW_X_SHIFT )),$(( BACK_Y )) $(( RIGHT_X + MID_ROW_X_SHIFT )),$(( RIGHT_Y ))")
 mid_wall_clockwise_rotation()
 {
     rotate_values_between_points cube $MID_ROW_FRONT_LEFT_ROTATION
@@ -628,9 +631,9 @@ front_wall_left_col_down_rotation()
 
 game ()
 {
-    cube_to_screen $draw_start_rows $draw_start_cols
-    print_screen
-    #debug_print_cube
+    #cube_to_screen $draw_start_rows $draw_start_cols
+    #print_screen
+    debug_print_cube
 }
 
 set_pixel ()
@@ -656,7 +659,6 @@ tick() {
 trap tick ALRM
 
 parse_args "$@"
-set -euo pipefail
 clear_game_area_screen
 reset_cube
 #cube[$(( FRONT_Y+1 )),$(( FRONT_X+2))]=$WHITE
