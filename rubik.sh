@@ -189,16 +189,20 @@ handle_input ()
         front_wall_mid_col_up_rotation
 	elif [[ "$1" = "I" ]]; then
         front_wall_right_col_down_rotation
+	elif [[ "$1" = "H" ]]; then
+        front_wall_counter_clockwise_rotation
+	elif [[ "$1" = "h" ]]; then
+        front_wall_clockwise_rotation
 	elif [[ "$1" = "i" ]]; then
         front_wall_right_col_up_rotation
-	elif [[ "$1" = "O" ]]; then
+	elif [[ "$1" = "J" ]]; then
         right_wall_mid_col_down_rotation
-	elif [[ "$1" = "o" ]]; then
+	elif [[ "$1" = "j" ]]; then
         right_wall_mid_col_up_rotation
-	elif [[ "$1" = "P" ]]; then
-        right_wall_right_col_down_rotation
-	elif [[ "$1" = "p" ]]; then
-        right_wall_right_col_up_rotation
+	elif [[ "$1" = "K" ]]; then
+        back_wall_counter_clockwise_rotation
+	elif [[ "$1" = "k" ]]; then
+        back_wall_clockwise_rotation
 	else
 		:
 	fi
@@ -447,9 +451,9 @@ wall_to_screen()
 	for (( x=wall_cube_x;x<wall_cube_x+N_CUBE;x++ )); do
         for (( y=wall_cube_y;y<wall_cube_y+N_CUBE;y++ )); do
             row_shift=$(( $row_shift_each_y*(y-wall_cube_y) ))
-            echo "x=$x y=$y"
+            #echo "x=$x y=$y"
 			color=${cube[$x,$y]}
-            echo "color=$color"
+            #echo "color=$color"
             color_from_mapping=${COLOR_MAPPING[$color]}
             col_shift=$(( $col_shift_each_x*(x-wall_cube_x) ))
             start_rows=$(( row_shift+wall_start_row+(x-wall_cube_x)*wall_rows_size))
@@ -724,39 +728,55 @@ front_wall_right_col_down_rotation()
     rotate_values_between_points cube $FRONT_RIGHT_COL_DOWN_ROTATION
 }
 
-RIGHT_MID_COL_UP_ROTATION=$(mixed_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y + MID_ROW_Y_SHIFT )) $(( TOP_X )),$(( TOP_Y + MID_ROW_Y_SHIFT )) $(( LEFT_X )),$(( LEFT_Y + MID_ROW_Y_SHIFT )) $(( BOT_X )),$(( BOT_Y + MID_ROW_Y_SHIFT ))")
+RIGHT_MID_COL_UP_ROTATION=$(mixed_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y + MID_ROW_Y_SHIFT )) $(( TOP_X + 1 )),$(( TOP_Y)) $(( LEFT_X )),$(( LEFT_Y + MID_ROW_Y_SHIFT )) $(( BOT_X + 1 )),$(( BOT_Y ))")
 right_wall_mid_col_up_rotation()
 {
     rotate_values_between_points cube $RIGHT_MID_COL_UP_ROTATION
 }
 
-RIGHT_MID_COL_DOWN_ROTATION=$(mixed_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y + MID_ROW_Y_SHIFT )) $(( BOT_X )),$(( BOT_Y + MID_ROW_Y_SHIFT )) $(( LEFT_X )),$(( LEFT_Y + MID_ROW_Y_SHIFT )) $(( TOP_X )),$(( TOP_Y + MID_ROW_Y_SHIFT ))")
+RIGHT_MID_COL_DOWN_ROTATION=$(mixed_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y + MID_ROW_Y_SHIFT )) $(( BOT_X + 1 )),$(( BOT_Y )) $(( LEFT_X )),$(( LEFT_Y + MID_ROW_Y_SHIFT )) $(( TOP_X + 1 )),$(( TOP_Y ))")
 right_wall_mid_col_down_rotation()
 {
     rotate_values_between_points cube $RIGHT_MID_COL_DOWN_ROTATION
 }
 
-RIGHT_RIGHT_COL_WALL_UP_ROTATION=$(same_wall_rotation_seq_clockwise ${BACK_X} ${BACK_Y})
-RIGHT_RIGHT_COL_UP_ROTATION=$(mixed_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y + RIGHT_ROW_Y_SHIFT )) $(( TOP_X )),$(( TOP_Y + RIGHT_ROW_Y_SHIFT )) $(( LEFT_X )),$(( LEFT_Y + RIGHT_ROW_Y_SHIFT )) $(( BOT_X )),$(( BOT_Y + RIGHT_ROW_Y_SHIFT ))")
-right_wall_right_col_up_rotation()
+BACK_WALL_COUNTER_CLOCKWISE_BACK_WALL_ROTATION=$(same_wall_rotation_seq_clockwise ${BACK_X} ${BACK_Y})
+BACK_WALL_COUNTER_CLOCKWISE_ROTATION=$(mixed_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y + RIGHT_ROW_Y_SHIFT )) $(( TOP_X )),$(( TOP_Y )) $(( LEFT_X )),$(( LEFT_Y )) $(( BOT_X + 2 )),$(( BOT_Y ))")
+back_wall_counter_clockwise_rotation()
 {
-    rotate_values_between_points cube $RIGHT_RIGHT_COL_WALL_UP_ROTATION
-    rotate_values_between_points cube $RIGHT_RIGHT_COL_UP_ROTATION
+    rotate_values_between_points cube $BACK_WALL_COUNTER_CLOCKWISE_BACK_WALL_ROTATION
+    rotate_values_between_points cube $BACK_WALL_COUNTER_CLOCKWISE_ROTATION
 }
 
-RIGHT_RIGHT_COL_WALL_DOWN_ROTATION=$(same_wall_rotation_seq_counter_clockwise ${BACK_X} ${BACK_Y})
-RIGHT_RIGHT_COL_DOWN_ROTATION=$(mixed_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y + RIGHT_ROW_Y_SHIFT )) $(( BOT_X )),$(( BOT_Y + RIGHT_ROW_Y_SHIFT )) $(( LEFT_X )),$(( LEFT_Y + RIGHT_ROW_Y_SHIFT )) $(( TOP_X )),$(( TOP_Y + RIGHT_ROW_Y_SHIFT ))")
-right_wall_right_col_down_rotation()
+BACK_WALL_CLOCKWISE_BACK_WALL_ROTATION=$(same_wall_rotation_seq_counter_clockwise ${BACK_X} ${BACK_Y})
+BACK_WALL_CLOCKWISE_ROTATION=$(mixed_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y + RIGHT_ROW_Y_SHIFT )) $(( BOT_X + 2 )),$(( BOT_Y )) $(( LEFT_X )),$(( LEFT_Y )) $(( TOP_X )),$(( TOP_Y ))")
+back_wall_clockwise_rotation()
 {
-    rotate_values_between_points cube $RIGHT_RIGHT_COL_WALL_DOWN_ROTATION
-    rotate_values_between_points cube $RIGHT_RIGHT_COL_DOWN_ROTATION
+    rotate_values_between_points cube $BACK_WALL_CLOCKWISE_BACK_WALL_ROTATION
+    rotate_values_between_points cube $BACK_WALL_CLOCKWISE_ROTATION
+}
+
+FRONT_WALL_COUNTER_CLOCKWISE_FRONT_WALL_ROTATION=$(same_wall_rotation_seq_clockwise ${FRONT_X} ${FRONT_Y})
+FRONT_WALL_COUNTER_CLOCKWISE_ROTATION=$(mixed_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y )) $(( TOP_X + 2 )),$(( TOP_Y )) $(( LEFT_X )),$(( LEFT_Y + 2 )) $(( BOT_X )),$(( BOT_Y ))")
+front_wall_counter_clockwise_rotation()
+{
+    rotate_values_between_points cube $FRONT_WALL_COUNTER_CLOCKWISE_FRONT_WALL_ROTATION
+    rotate_values_between_points cube $FRONT_WALL_COUNTER_CLOCKWISE_ROTATION
+}
+
+FRONT_WALL_CLOCKWISE_FRONT_WALL_ROTATION=$(same_wall_rotation_seq_counter_clockwise ${FRONT_X} ${FRONT_Y})
+FRONT_WALL_CLOCKWISE_ROTATION=$(mixed_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y )) $(( BOT_X )),$(( BOT_Y )) $(( LEFT_X )),$(( LEFT_Y + 2 )) $(( TOP_X + 2 )),$(( TOP_Y ))")
+front_wall_clockwise_rotation()
+{
+    rotate_values_between_points cube $FRONT_WALL_CLOCKWISE_FRONT_WALL_ROTATION
+    rotate_values_between_points cube $FRONT_WALL_CLOCKWISE_ROTATION
 }
 
 game ()
 {
-    cube_to_screen $draw_start_rows $draw_start_cols
-    print_screen
-    #debug_print_cube
+    #cube_to_screen $draw_start_rows $draw_start_cols
+    #print_screen
+    debug_print_cube
 }
 
 set_pixel ()
