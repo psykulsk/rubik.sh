@@ -220,6 +220,11 @@ declare -i TOP_Y=${N_CUBE}
 declare -i BOT_X=$(( 2*${N_CUBE} ))
 declare -i BOT_Y=${N_CUBE}
 
+declare -r SEQ_DIR_NORTH="N"
+declare -r SEQ_DIR_SOUTH="S"
+declare -r SEQ_DIR_EAST="E"
+declare -r SEQ_DIR_WEST="W"
+
 declare -r BLUE="BLUE"
 declare -r GREEN="GREEN"
 declare -r WHITE="WHITE"
@@ -490,12 +495,53 @@ cube_to_screen()
     wall_to_screen draw_diag_top_square $top_wall_row $top_wall_col $TOP_X $TOP_Y $TOP_SQUARE_ROWS_SIZE $TOP_SQUARE_COLS_SIZE 0 -3
 }
 
-horizontal_rotation_seq()
+rotation_seq()
 {
     sequence=""
     for row_start_point in $1
     do
     
+        #echo "row_start_point=$row_start_point"
+        IFS=',' read -r sequence_direction x y <<< $row_start_point
+	    if [[ $sequence_direction = $SEQ_DIR_SOUTH ]]; then
+            for i in {0..2}
+            do
+                start_x=$((x+i))
+                sequence="${sequence}${start_x},${y}_"
+            done
+            sequence="${sequence};"
+	    elif [[ $sequence_direction = $SEQ_DIR_NORTH ]]; then
+            for i in {0..2}
+            do
+                start_x=$((x+2-i))
+                sequence="${sequence}${start_x},${y}_"
+            done
+            sequence="${sequence};"
+	    elif [[ $sequence_direction = $SEQ_DIR_EAST ]]; then
+            for i in {0..2}
+            do
+                start_y=$((y+i))
+                sequence="${sequence}${x},${start_y}_"
+            done
+            sequence="${sequence};"
+	    elif [[ $sequence_direction = $SEQ_DIR_WEST ]]; then
+            for i in {0..2}
+            do
+                start_y=$((y+2-i))
+                sequence="${sequence}${x},${start_y}_"
+            done
+            sequence="${sequence};"
+        fi
+    done
+    echo $sequence
+}
+
+
+horizontal_rotation_seq()
+{
+    sequence=""
+    for row_start_point in $1
+    do
         #echo "row_start_point=$row_start_point"
         IFS=',' read -r x y <<< $row_start_point
         for i in {0..2}
@@ -614,7 +660,7 @@ same_wall_rotation_seq_counter_clockwise()
     sequence="${sequence};"
     for i in {0..2}
     do
-        start_x=$((wall_top_left_x+2-i))
+        start_x=$((wall_top_left_x+i))
         sequence="${sequence}${start_x},${wall_top_left_y}_"
     done
     sequence="${sequence};"
@@ -626,7 +672,7 @@ same_wall_rotation_seq_counter_clockwise()
     sequence="${sequence};"
     for i in {0..2}
     do
-        start_x=$((wall_top_left_x+i))
+        start_x=$((wall_top_left_x+2-i))
         sequence="${sequence}${start_x},$((wall_top_left_y+2))_"
     done
     sequence="${sequence};"
@@ -635,7 +681,7 @@ same_wall_rotation_seq_counter_clockwise()
 
 
 TOP_WALL_CLOCKWISE_ROTATION=$(same_wall_rotation_seq_clockwise ${TOP_X} ${TOP_Y})
-TOP_ROW_FRONT_LEFT_ROTATION=$(horizontal_rotation_seq "${FRONT_X},${FRONT_Y} ${LEFT_X},${LEFT_Y} ${BACK_X},${BACK_Y} ${RIGHT_X},${RIGHT_Y}")
+TOP_ROW_FRONT_LEFT_ROTATION=$(rotation_seq "${SEQ_DIR_EAST},${FRONT_X},${FRONT_Y} ${SEQ_DIR_EAST},${LEFT_X},${LEFT_Y} ${SEQ_DIR_EAST},${BACK_X},${BACK_Y} ${SEQ_DIR_EAST},${RIGHT_X},${RIGHT_Y}")
 
 top_wall_clockwise_rotation()
 {
@@ -654,7 +700,7 @@ top_wall_counter_clockwise_rotation()
 
 BOT_ROW_X_SHIFT=2
 BOT_WALL_COUNTER_CLOCKWISE_ROTATION=$(same_wall_rotation_seq_counter_clockwise ${BOT_X} ${BOT_Y})
-BOT_ROW_FRONT_RIGHT_ROTATION=$(horizontal_rotation_seq "$(( RIGHT_X + BOT_ROW_X_SHIFT )),$(( RIGHT_Y )) $(( BACK_X + BOT_ROW_X_SHIFT )),$(( BACK_Y )) $(( LEFT_X + BOT_ROW_X_SHIFT )),$(( LEFT_Y )) $(( FRONT_X + BOT_ROW_X_SHIFT )),$(( FRONT_Y ))")
+BOT_ROW_FRONT_RIGHT_ROTATION=$(horizontal_rotation_seq "$(( FRONT_X + BOT_ROW_X_SHIFT )),$(( FRONT_Y )) $(( RIGHT_X + BOT_ROW_X_SHIFT )),$(( RIGHT_Y )) $(( BACK_X + BOT_ROW_X_SHIFT )),$(( BACK_Y )) $(( LEFT_X + BOT_ROW_X_SHIFT )),$(( LEFT_Y )) ")
 bot_wall_counter_clockwise_rotation()
 {
     rotate_values_between_points cube $BOT_WALL_COUNTER_CLOCKWISE_ROTATION
@@ -670,7 +716,7 @@ bot_wall_clockwise_rotation()
 }
 
 MID_ROW_X_SHIFT=1
-MID_ROW_FRONT_RIGHT_ROTATION=$(horizontal_rotation_seq "$(( RIGHT_X + MID_ROW_X_SHIFT )),$(( RIGHT_Y )) $(( BACK_X + MID_ROW_X_SHIFT )),$(( BACK_Y )) $(( LEFT_X + MID_ROW_X_SHIFT )),$(( LEFT_Y )) $(( FRONT_X + MID_ROW_X_SHIFT )),$(( FRONT_Y ))")
+MID_ROW_FRONT_RIGHT_ROTATION=$(horizontal_rotation_seq " $(( FRONT_X + MID_ROW_X_SHIFT )),$(( FRONT_Y )) $(( RIGHT_X + MID_ROW_X_SHIFT )),$(( RIGHT_Y )) $(( BACK_X + MID_ROW_X_SHIFT )),$(( BACK_Y )) $(( LEFT_X + MID_ROW_X_SHIFT )),$(( LEFT_Y ))")
 mid_wall_counter_clockwise_rotation()
 {
     rotate_values_between_points cube $MID_ROW_FRONT_RIGHT_ROTATION
@@ -764,8 +810,8 @@ front_wall_counter_clockwise_rotation()
     rotate_values_between_points cube $FRONT_WALL_COUNTER_CLOCKWISE_ROTATION
 }
 
-FRONT_WALL_CLOCKWISE_FRONT_WALL_ROTATION=$(same_wall_rotation_seq_counter_clockwise ${FRONT_X} ${FRONT_Y})
-FRONT_WALL_CLOCKWISE_ROTATION=$(mixed_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y )) $(( BOT_X )),$(( BOT_Y )) $(( LEFT_X )),$(( LEFT_Y + 2 )) $(( TOP_X + 2 )),$(( TOP_Y ))")
+FRONT_WALL_CLOCKWISE_FRONT_WALL_ROTATION=$(same_wall_rotation_seq_clockwise ${FRONT_X} ${FRONT_Y})
+FRONT_WALL_CLOCKWISE_ROTATION=$(rotation_seq "${SEQ_DIR_SOUTH},$(( RIGHT_X )),$(( RIGHT_Y )) ${SEQ_DIR_WEST},$(( BOT_X )),$(( BOT_Y )) ${SEQ_DIR_NORTH},$(( LEFT_X )),$(( LEFT_Y + 2 )) ${SEQ_DIR_EAST},$(( TOP_X + 2 )),$(( TOP_Y ))")
 front_wall_clockwise_rotation()
 {
     rotate_values_between_points cube $FRONT_WALL_CLOCKWISE_FRONT_WALL_ROTATION
@@ -808,6 +854,7 @@ reset_cube
 #print_screen
 # start game
 tick
+#lecho $FRONT_WALL_CLOCKWISE_ROTATION
 #echo $TOP_WALL_CLOCKWISE_ROTATION
 #echo $TOP_WALL_COUNTER_CLOCKWISE_ROTATION
 # poll for user input in loop
