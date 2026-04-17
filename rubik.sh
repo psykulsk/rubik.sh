@@ -24,8 +24,9 @@ trap 'tput cnorm;' EXIT
 trap 'tput cnorm; clear; exit;' SIGINT
 
 # declare default options
-declare -i cols=50
-declare -i rows=25
+declare -i cols=53
+declare -i rows=45
+declare -i cols_with_controls_section=$(( cols + 10 ))
 X_TIME=0.1
 Y_TIME=0.14
 REFRESH_TIME=$X_TIME
@@ -35,8 +36,11 @@ declare -A screen
 # holds a cube matrix in an associative array
 declare -A cube
 
-declare -i draw_start_cols=cols/3
-declare -i draw_start_rows=rows/3
+declare -i draw_start_cols=10
+declare -i draw_start_rows=9
+
+declare -i back_cube_draw_start_cols=10
+declare -i back_cube_draw_start_rows=$(( rows - 21 ))
 
 # key input from user
 key=""
@@ -53,13 +57,14 @@ declare -r ARROW_RIGHT="C"
 declare -r ARROW_LEFT="D"
 declare -r HORIZONTAL_BAR="-"
 declare -r VERTICAL_BAR="|"
-declare -r CORNER_ICON="\e[41m \e[0m"
+declare -r CORNER_ICON="+"
 declare -r WHITE_TEXT="\e[37m"
 declare -r RED_TEXT="\e[31m"
 declare -r GREEN_TEXT="\e[32m"
 declare -r YELLOW_TEXT="\e[33m"
 declare -r BLUE_TEXT="\e[34m"
 declare -r PINK_TEXT="\e[35m"
+declare -r TEAL_TEXT="\e[36m"
 declare -r DIM="\e[2m"
 declare -r GREEN_BG="\e[42m"
 declare -r RESET="\e[0m"
@@ -71,6 +76,7 @@ declare -r WHITE_FULL="${WHITE_TEXT}\u28FF${RESET}"
 declare -r GREEN_FULL="${GREEN_TEXT}\u28FF${RESET}"
 declare -r RED_FULL="${RED_TEXT}\u28FF${RESET}"
 declare -r YELLOW_FULL="${YELLOW_TEXT}\u28FF${RESET}"
+declare -r TEAL_FULL="${TEAL_TEXT}\u28FF${RESET}"
 declare -r BLUE_FULL="${BLUE_TEXT}\u28FF${RESET}"
 declare -r PINK_FULL="${PINK_TEXT}\u28FF${RESET}"
 declare -r DIM_GREEN_FULL="${DIM}${GREEN_TEXT}\u28FF${RESET}"
@@ -158,7 +164,7 @@ draw_game_area_boundaries()
 print_screen ()
 {
 	for ((i=0;i<rows+1;i++)); do
-		for ((j=0;j<cols+1;j++)); do
+        for ((j=0;j<cols+1;j++)); do
 			printf "${screen[$i,$j]}"
 		done
 		printf "\n"
@@ -233,7 +239,7 @@ declare -r RED="RED"
 declare -r PINK="PINK"
 declare -r UNSET="___"
 declare -A STARTING_COLORS=( $BLUE $GREEN $WHITE $YELLOW $RED $PINK)
-declare -A COLOR_MAPPING=( [$BLUE]=$BLUE_FULL [$GREEN]=$GREEN_FULL [$WHITE]=$WHITE_FULL [$YELLOW]=$YELLOW_FULL [$RED]=$RED_FULL [$PINK]=$PINK_FULL )
+declare -A COLOR_MAPPING=( [$BLUE]=$BLUE_FULL [$GREEN]=$GREEN_FULL [$WHITE]=$WHITE_FULL [$YELLOW]=$TEAL_FULL [$RED]=$RED_FULL [$PINK]=$PINK_FULL )
 
 
 set_color_to_wall_on_cube()
@@ -393,6 +399,91 @@ draw_diag_right_square ()
     screen[$(($r+3)),$(($c))]=$cell
 }
 
+draw_diag_right_square_for_bot_cube ()
+{
+    start_r=$1
+    start_c=$2
+    cell=$3
+    r=$(( $start_r ))
+    c=$start_c
+    screen[$(($r)),$(($c))]=$cell
+    screen[$(($r+1)),$(($c))]=$cell
+    screen[$(($r+2)),$(($c))]=$cell
+    screen[$(($r+3)),$(($c))]=$cell
+    r=$(( $start_r+1 ))
+    c=$(( $start_c+1 ))
+    screen[$(($r)),$(($c))]=$cell
+    screen[$(($r+1)),$(($c))]=$cell
+    screen[$(($r+2)),$(($c))]=$cell
+    screen[$(($r+3)),$(($c))]=$cell
+    r=$(( $start_r+2 ))
+    c=$(( $start_c+2 ))
+    screen[$(($r)),$(($c))]=$cell
+    screen[$(($r+1)),$(($c))]=$cell
+    screen[$(($r+2)),$(($c))]=$cell
+    screen[$(($r+3)),$(($c))]=$cell
+}
+
+top_label()
+{
+    r=$1
+    c=$2
+    screen[$(($r)),$(($c))]="T"
+    screen[$(($r)),$(($c+1))]="0"
+    screen[$(($r)),$(($c+2))]="P"
+}
+
+bottom_label()
+{
+    r=$1
+    c=$2
+    screen[$(($r)),$(($c))]="B"
+    screen[$(($r)),$(($c+1))]="O"
+    screen[$(($r)),$(($c+2))]="T"
+}
+
+right_label()
+{
+    r=$1
+    c=$2
+    screen[$(($r)),$(($c))]="R"
+    screen[$(($r)),$(($c+1))]="I"
+    screen[$(($r)),$(($c+2))]="G"
+    screen[$(($r)),$(($c+3))]="H"
+    screen[$(($r)),$(($c+4))]="T"
+}
+
+left_label()
+{
+    r=$1
+    c=$2
+    screen[$(($r)),$(($c))]="L"
+    screen[$(($r)),$(($c+1))]="E"
+    screen[$(($r)),$(($c+2))]="F"
+    screen[$(($r)),$(($c+3))]="T"
+}
+
+front_label()
+{
+    r=$1
+    c=$2
+    screen[$(($r)),$(($c))]="F"
+    screen[$(($r)),$(($c+1))]="R"
+    screen[$(($r)),$(($c+2))]="O"
+    screen[$(($r)),$(($c+3))]="N"
+    screen[$(($r)),$(($c+4))]="T"
+}
+
+back_label()
+{
+    r=$1
+    c=$2
+    screen[$(($r)),$(($c))]="B"
+    screen[$(($r)),$(($c+1))]="A"
+    screen[$(($r)),$(($c+2))]="C"
+    screen[$(($r)),$(($c+3))]="K"
+}
+
 draw_front_square ()
 {
     #echo "drawing front square 1=$1 2=$2 3=$3"
@@ -442,6 +533,25 @@ draw_diag_top_square ()
     screen[$(($r)),$(($c+4))]=$cell
 }
 
+draw_diag_bot_square ()
+{
+    cell=$3
+    r=$1
+    c=$2
+    screen[$(($r)),$(($c))]=$cell
+    screen[$(($r)),$(($c+1))]=$cell
+    screen[$(($r)),$(($c+2))]=$cell
+    screen[$(($r)),$(($c+3))]=$cell
+    screen[$(($r)),$(($c+4))]=$cell
+    r=$1+1
+    c=$2+1
+    screen[$(($r)),$(($c))]=$cell
+    screen[$(($r)),$(($c+1))]=$cell
+    screen[$(($r)),$(($c+2))]=$cell
+    screen[$(($r)),$(($c+3))]=$cell
+    screen[$(($r)),$(($c+4))]=$cell
+}
+
 wall_to_screen()
 {
     draw_method=$1
@@ -484,15 +594,37 @@ cube_to_screen()
     front_row=$1
     front_col=$2
 
+    front_label $(( front_row + 5 )) $(( front_col - 7))
     wall_to_screen draw_front_square $front_row $front_col $FRONT_X $FRONT_Y $FRONT_SQUARE_ROWS_SIZE $FRONT_SQUARE_COLS_SIZE 0 0
     
     right_wall_row=$(( $front_row ))
     right_wall_col=$(( $front_col + FRONT_SQUARE_COLS_SIZE*N_CUBE ))
+    right_label $(( right_wall_row + 5 )) $(( right_wall_col + 11 ))
     wall_to_screen draw_diag_right_square $right_wall_row $right_wall_col $RIGHT_X $RIGHT_Y $RIGHT_SQUARE_ROWS_SIZE $RIGHT_SQUARE_COLS_SIZE -2 0
 
     top_wall_row=$(( $front_row - TOP_SQUARE_ROWS_SIZE*N_CUBE  ))
     top_wall_col=$(( $front_col + RIGHT_SQUARE_COLS_SIZE*N_CUBE - 1 ))
+    top_label $(( top_wall_row - 2 )) $(( top_wall_col ))
     wall_to_screen draw_diag_top_square $top_wall_row $top_wall_col $TOP_X $TOP_Y $TOP_SQUARE_ROWS_SIZE $TOP_SQUARE_COLS_SIZE 0 -3
+}
+
+back_cube_to_screen()
+{
+    front_row=$1
+    front_col=$2
+
+    back_label $(( front_row + 5 )) $(( front_col - 7))
+    wall_to_screen draw_front_square $front_row $front_col $BACK_X $BACK_Y $FRONT_SQUARE_ROWS_SIZE $FRONT_SQUARE_COLS_SIZE 0 0
+    
+    right_wall_row=$(( $front_row ))
+    right_wall_col=$(( $front_col + FRONT_SQUARE_COLS_SIZE*N_CUBE ))
+    left_label $(( right_wall_row + 5 )) $(( right_wall_col + 11 ))
+    wall_to_screen draw_diag_right_square_for_bot_cube $right_wall_row $right_wall_col $LEFT_X $LEFT_Y $RIGHT_SQUARE_ROWS_SIZE $RIGHT_SQUARE_COLS_SIZE 2 0
+
+    bot_wall_row=$(( $front_row + FRONT_SQUARE_ROWS_SIZE*N_CUBE ))
+    bot_wall_col=$(( $front_col + 1 ))
+    bottom_label $(( bot_wall_row +  7 )) $(( bot_wall_col + 7 ))
+    wall_to_screen draw_diag_bot_square $bot_wall_row $bot_wall_col $BOT_X $BOT_Y $TOP_SQUARE_ROWS_SIZE $TOP_SQUARE_COLS_SIZE 0 3
 }
 
 rotation_seq()
@@ -776,10 +908,28 @@ front_wall_clockwise_rotation()
     rotate_values_between_points cube $FRONT_WALL_CLOCKWISE_ROTATION
 }
 
+print_controls()
+{
+cat << EOF
+Controls:
+-----------------------------------------------+
+    Horizontal  |  Vertical       |   Z-axis   |
+-----------------------------------------------+
+T - top row     |  Y - left col   |  H - front |
+G - mid row     |  U - mid col    |  J - mid   |
+B - bot row     |  I - right col  |  K - back  |
+-----------------------------------------------+
+Shift - reverse rotation direction             |
+-----------------------------------------------+
+EOF
+}
+
 game ()
 {
     cube_to_screen $draw_start_rows $draw_start_cols
+    back_cube_to_screen $back_cube_draw_start_rows $back_cube_draw_start_cols
     print_screen
+    print_controls
     #debug_print_cube
 }
 
@@ -794,16 +944,21 @@ set_cursor_below_game ()
 	tput cup $(($rows+1)) 0
 }
 
+declare -r UNKNOWN="unknown"
 # execute game loop, then sleep for REFRESH_TIME in a subshell and send SIGALRM to the current process
 # thanks to the trap below it will trigger the game loop again
 tick() {
-	tput cup 0 0
-	handle_input "$key"
-    key="unknown"
-	game
-	( sleep $REFRESH_TIME; kill -s ALRM $$ &> /dev/null )&
+    while true
+    do
+        tput cup 0 0
+        handle_input "$key"
+        key=$UNKNOWN
+        game
+        read -rsn 1 key
+        #( sleep $REFRESH_TIME; kill -s ALRM $$ &> /dev/null )&
+    done
 }
-trap tick ALRM
+#trap tick ALRM
 
 parse_args "$@"
 clear_game_area_screen
@@ -816,7 +971,7 @@ tick
 #echo $TOP_WALL_CLOCKWISE_ROTATION
 #echo $TOP_WALL_COUNTER_CLOCKWISE_ROTATION
 # poll for user input in loop
-for (( ; ; ))
-do
-	read -rsn 1 key
-done
+#for (( ; ; ))
+#do
+#	read -rsn 1 key
+#done
