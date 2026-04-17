@@ -167,17 +167,17 @@ print_screen ()
 
 handle_input ()
 {
-	if [[ "$1" = "T" ]]; then
+	if [[ "$1" = "t" ]]; then
         top_wall_counter_clockwise_rotation
-	elif [[ "$1" = "t" ]]; then
+	elif [[ "$1" = "T" ]]; then
         top_wall_clockwise_rotation
-	elif [[ "$1" = "G" ]]; then
-        mid_wall_counter_clockwise_rotation
 	elif [[ "$1" = "g" ]]; then
+        mid_wall_counter_clockwise_rotation
+	elif [[ "$1" = "G" ]]; then
         mid_wall_clockwise_rotation
-	elif [[ "$1" = "B" ]]; then
-        bot_wall_counter_clockwise_rotation
 	elif [[ "$1" = "b" ]]; then
+        bot_wall_counter_clockwise_rotation
+	elif [[ "$1" = "B" ]]; then
         bot_wall_clockwise_rotation
 	elif [[ "$1" = "Y" ]]; then
         front_wall_left_col_down_rotation
@@ -195,9 +195,9 @@ handle_input ()
         front_wall_clockwise_rotation
 	elif [[ "$1" = "i" ]]; then
         front_wall_right_col_up_rotation
-	elif [[ "$1" = "J" ]]; then
-        right_wall_mid_col_down_rotation
 	elif [[ "$1" = "j" ]]; then
+        right_wall_mid_col_down_rotation
+	elif [[ "$1" = "J" ]]; then
         right_wall_mid_col_up_rotation
 	elif [[ "$1" = "K" ]]; then
         back_wall_counter_clockwise_rotation
@@ -573,48 +573,6 @@ vertical_rotation_seq()
     echo $sequence
 }
 
-mixed_rotation_seq()
-{
-    sequence=""
-    
-    IFS=' ' read -r point_1 point_2 point_3 point_4 <<< $1
-    #starting with vertical
-    IFS=',' read -r x y <<< $point_1
-    for i in {0..2}
-    do
-        start_x=$((x+i))
-        sequence="${sequence}${start_x},${y}_"
-    done
-    sequence="${sequence};"
-    #horizontal
-    IFS=',' read -r x y <<< $point_2
-    for i in {0..2}
-    do
-        start_y=$((y+i))
-        sequence="${sequence}${x},${start_y}_"
-    done
-    sequence="${sequence};"
-    #vertical
-    IFS=',' read -r x y <<< $point_3
-    for i in {0..2}
-    do
-        start_x=$((x+i))
-        sequence="${sequence}${start_x},${y}_"
-    done
-    sequence="${sequence};"
-    #horizontal
-    IFS=',' read -r x y <<< $point_4
-    for i in {0..2}
-    do
-        start_y=$((y+i))
-        sequence="${sequence}${x},${start_y}_"
-    done
-    sequence="${sequence};"
-
-    echo $sequence
-}
-
-
 same_wall_rotation_seq_clockwise()
 {
     sequence=""
@@ -660,7 +618,7 @@ same_wall_rotation_seq_counter_clockwise()
     sequence="${sequence};"
     for i in {0..2}
     do
-        start_x=$((wall_top_left_x+i))
+        start_x=$((wall_top_left_x+2-i))
         sequence="${sequence}${start_x},${wall_top_left_y}_"
     done
     sequence="${sequence};"
@@ -672,7 +630,7 @@ same_wall_rotation_seq_counter_clockwise()
     sequence="${sequence};"
     for i in {0..2}
     do
-        start_x=$((wall_top_left_x+2-i))
+        start_x=$((wall_top_left_x+i))
         sequence="${sequence}${start_x},$((wall_top_left_y+2))_"
     done
     sequence="${sequence};"
@@ -774,20 +732,20 @@ front_wall_right_col_down_rotation()
     rotate_values_between_points cube $FRONT_RIGHT_COL_DOWN_ROTATION
 }
 
-RIGHT_MID_COL_UP_ROTATION=$(mixed_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y + MID_ROW_Y_SHIFT )) $(( TOP_X + 1 )),$(( TOP_Y)) $(( LEFT_X )),$(( LEFT_Y + MID_ROW_Y_SHIFT )) $(( BOT_X + 1 )),$(( BOT_Y ))")
+RIGHT_MID_COL_UP_ROTATION=$(rotation_seq "${SEQ_DIR_SOUTH},$(( RIGHT_X )),$(( RIGHT_Y + MID_ROW_Y_SHIFT )) ${SEQ_DIR_EAST},$(( TOP_X + 1 )),$(( TOP_Y)) ${SEQ_DIR_NORTH},$(( LEFT_X )),$(( LEFT_Y + MID_ROW_Y_SHIFT )) ${SEQ_DIR_WEST},$(( BOT_X + 1 )),$(( BOT_Y ))")
 right_wall_mid_col_up_rotation()
 {
     rotate_values_between_points cube $RIGHT_MID_COL_UP_ROTATION
 }
 
-RIGHT_MID_COL_DOWN_ROTATION=$(mixed_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y + MID_ROW_Y_SHIFT )) $(( BOT_X + 1 )),$(( BOT_Y )) $(( LEFT_X )),$(( LEFT_Y + MID_ROW_Y_SHIFT )) $(( TOP_X + 1 )),$(( TOP_Y ))")
+RIGHT_MID_COL_DOWN_ROTATION=$(rotation_seq "${SEQ_DIR_SOUTH},$(( RIGHT_X )),$(( RIGHT_Y + MID_ROW_Y_SHIFT )) ${SEQ_DIR_WEST},$(( BOT_X + 1 )),$(( BOT_Y )) ${SEQ_DIR_NORTH},$(( LEFT_X )),$(( LEFT_Y + MID_ROW_Y_SHIFT )) ${SEQ_DIR_EAST},$(( TOP_X + 1 )),$(( TOP_Y ))")
 right_wall_mid_col_down_rotation()
 {
     rotate_values_between_points cube $RIGHT_MID_COL_DOWN_ROTATION
 }
 
 BACK_WALL_COUNTER_CLOCKWISE_BACK_WALL_ROTATION=$(same_wall_rotation_seq_clockwise ${BACK_X} ${BACK_Y})
-BACK_WALL_COUNTER_CLOCKWISE_ROTATION=$(mixed_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y + RIGHT_ROW_Y_SHIFT )) $(( TOP_X )),$(( TOP_Y )) $(( LEFT_X )),$(( LEFT_Y )) $(( BOT_X + 2 )),$(( BOT_Y ))")
+BACK_WALL_COUNTER_CLOCKWISE_ROTATION=$(rotation_seq "${SEQ_DIR_SOUTH},$(( RIGHT_X )),$(( RIGHT_Y + RIGHT_ROW_Y_SHIFT )) ${SEQ_DIR_EAST},$(( TOP_X )),$(( TOP_Y )) ${SEQ_DIR_NORTH},$(( LEFT_X )),$(( LEFT_Y )) ${SEQ_DIR_WEST},$(( BOT_X + 2 )),$(( BOT_Y ))")
 back_wall_counter_clockwise_rotation()
 {
     rotate_values_between_points cube $BACK_WALL_COUNTER_CLOCKWISE_BACK_WALL_ROTATION
@@ -795,15 +753,15 @@ back_wall_counter_clockwise_rotation()
 }
 
 BACK_WALL_CLOCKWISE_BACK_WALL_ROTATION=$(same_wall_rotation_seq_counter_clockwise ${BACK_X} ${BACK_Y})
-BACK_WALL_CLOCKWISE_ROTATION=$(mixed_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y + RIGHT_ROW_Y_SHIFT )) $(( BOT_X + 2 )),$(( BOT_Y )) $(( LEFT_X )),$(( LEFT_Y )) $(( TOP_X )),$(( TOP_Y ))")
+BACK_WALL_CLOCKWISE_ROTATION=$(rotation_seq "${SEQ_DIR_SOUTH},$(( RIGHT_X )),$(( RIGHT_Y + RIGHT_ROW_Y_SHIFT )) ${SEQ_DIR_WEST},$(( BOT_X + 2 )),$(( BOT_Y )) ${SEQ_DIR_NORTH},$(( LEFT_X )),$(( LEFT_Y )) ${SEQ_DIR_EAST},$(( TOP_X )),$(( TOP_Y ))")
 back_wall_clockwise_rotation()
 {
     rotate_values_between_points cube $BACK_WALL_CLOCKWISE_BACK_WALL_ROTATION
     rotate_values_between_points cube $BACK_WALL_CLOCKWISE_ROTATION
 }
 
-FRONT_WALL_COUNTER_CLOCKWISE_FRONT_WALL_ROTATION=$(same_wall_rotation_seq_clockwise ${FRONT_X} ${FRONT_Y})
-FRONT_WALL_COUNTER_CLOCKWISE_ROTATION=$(mixed_rotation_seq "$(( RIGHT_X )),$(( RIGHT_Y )) $(( TOP_X + 2 )),$(( TOP_Y )) $(( LEFT_X )),$(( LEFT_Y + 2 )) $(( BOT_X )),$(( BOT_Y ))")
+FRONT_WALL_COUNTER_CLOCKWISE_FRONT_WALL_ROTATION=$(same_wall_rotation_seq_counter_clockwise ${FRONT_X} ${FRONT_Y})
+FRONT_WALL_COUNTER_CLOCKWISE_ROTATION=$(rotation_seq "${SEQ_DIR_SOUTH},$(( RIGHT_X )),$(( RIGHT_Y )) ${SEQ_DIR_EAST},$(( TOP_X + 2 )),$(( TOP_Y )) ${SEQ_DIR_NORTH},$(( LEFT_X )),$(( LEFT_Y + 2 )) ${SEQ_DIR_WEST},$(( BOT_X )),$(( BOT_Y ))")
 front_wall_counter_clockwise_rotation()
 {
     rotate_values_between_points cube $FRONT_WALL_COUNTER_CLOCKWISE_FRONT_WALL_ROTATION
@@ -820,9 +778,9 @@ front_wall_clockwise_rotation()
 
 game ()
 {
-    #cube_to_screen $draw_start_rows $draw_start_cols
-    #print_screen
-    debug_print_cube
+    cube_to_screen $draw_start_rows $draw_start_cols
+    print_screen
+    #debug_print_cube
 }
 
 set_pixel ()
