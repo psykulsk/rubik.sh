@@ -24,9 +24,8 @@ trap 'tput cnorm;' EXIT
 trap 'tput cnorm; clear; exit;' SIGINT
 
 # declare default options
-declare -i cols=53
+declare -i cols=47
 declare -i rows=45
-declare -i cols_with_controls_section=$(( cols + 10 ))
 X_TIME=0.1
 Y_TIME=0.14
 REFRESH_TIME=$X_TIME
@@ -586,7 +585,44 @@ wall_to_screen()
             $draw_method $start_rows $start_cols $color_to_set
 		done
 	done
-    
+}
+
+wall_to_screen_reverse()
+{
+    draw_method=$1
+    wall_start_row=$2
+    wall_start_cols=$3
+    wall_cube_x=$4
+    wall_cube_y=$5
+    wall_rows_size=$6
+    wall_cols_size=$7
+    row_shift_each_y=$8
+    col_shift_each_x=$9
+	for (( x=wall_cube_x;x<wall_cube_x+N_CUBE;x++ )); do
+        for (( y=wall_cube_y;y<wall_cube_y+N_CUBE;y++ )); do
+            row_shift=$(( $row_shift_each_y*(y-wall_cube_y) ))
+            reversed_x=$((wall_cube_x+N_CUBE-1-(x-wall_cube_x)))
+            reversed_y=$((wall_cube_y+N_CUBE-1-(y-wall_cube_y)))
+            #echo "reversed_x=$reversed_x reversed_y=$reversed_y"
+            color=${cube[$reversed_x,$reversed_y]}
+            #echo "color=$color"
+            color_from_mapping=${COLOR_MAPPING[$color]}
+            col_shift=$(( $col_shift_each_x*(x-wall_cube_x) ))
+            start_rows=$(( row_shift+wall_start_row+(x-wall_cube_x)*wall_rows_size))
+            start_cols=$(( col_shift+wall_start_cols+(y-wall_cube_y)*wall_cols_size))
+            color_to_set=$color_from_mapping
+            #if (( (y-wall_cube_y) % 2 == 1 )); then
+            #    if (( (x-wall_cube_x) % 2 == 1 )); then
+            #        color_to_set=$DIM$color_from_mapping
+            #    fi
+            #else 
+            #    if (( (x-wall_cube_x) % 2 == 0 )); then
+            #        color_to_set=$DIM$color_from_mapping
+            #    fi
+            #fi
+            $draw_method $start_rows $start_cols $color_to_set
+		done
+	done
 }
 
 cube_to_screen()
@@ -604,7 +640,7 @@ cube_to_screen()
 
     top_wall_row=$(( $front_row - TOP_SQUARE_ROWS_SIZE*N_CUBE  ))
     top_wall_col=$(( $front_col + RIGHT_SQUARE_COLS_SIZE*N_CUBE - 1 ))
-    top_label $(( top_wall_row - 2 )) $(( top_wall_col ))
+    top_label $(( top_wall_row - 2 )) $(( top_wall_col + 3 ))
     wall_to_screen draw_diag_top_square $top_wall_row $top_wall_col $TOP_X $TOP_Y $TOP_SQUARE_ROWS_SIZE $TOP_SQUARE_COLS_SIZE 0 -3
 }
 
@@ -623,8 +659,9 @@ back_cube_to_screen()
 
     bot_wall_row=$(( $front_row + FRONT_SQUARE_ROWS_SIZE*N_CUBE ))
     bot_wall_col=$(( $front_col + 1 ))
-    bottom_label $(( bot_wall_row +  7 )) $(( bot_wall_col + 7 ))
-    wall_to_screen draw_diag_bot_square $bot_wall_row $bot_wall_col $BOT_X $BOT_Y $TOP_SQUARE_ROWS_SIZE $TOP_SQUARE_COLS_SIZE 0 3
+    bottom_label $(( bot_wall_row +  7 )) $(( bot_wall_col + 10 ))
+    #wall_to_screen draw_diag_bot_square $bot_wall_row $bot_wall_col $BOT_X $BOT_Y $TOP_SQUARE_ROWS_SIZE $TOP_SQUARE_COLS_SIZE 0 3
+    wall_to_screen_reverse draw_diag_bot_square $bot_wall_row $bot_wall_col $BOT_X $BOT_Y $TOP_SQUARE_ROWS_SIZE $TOP_SQUARE_COLS_SIZE 0 3
 }
 
 rotation_seq()
@@ -912,15 +949,15 @@ print_controls()
 {
 cat << EOF
 Controls:
------------------------------------------------+
-    Horizontal  |  Vertical       |   Z-axis   |
------------------------------------------------+
-T - top row     |  Y - left col   |  H - front |
-G - mid row     |  U - mid col    |  J - mid   |
-B - bot row     |  I - right col  |  K - back  |
------------------------------------------------+
-Shift - reverse rotation direction             |
------------------------------------------------+
+-----------------------------------------+
+ Horizontal  | Vertical      | Z-axis    |
+-----------------------------------------+
+ T - top row | Y - left col  | H - front |
+ G - mid row | U - mid col   | J - mid   |
+ B - bot row | I - right col | K - back  |
+-----------------------------------------+
+Shift - reverse rotation direction       |
+-----------------------------------------+
 EOF
 }
 
