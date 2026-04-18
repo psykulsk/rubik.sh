@@ -20,8 +20,6 @@ set -euo pipefail
 tput civis
 # reset to normal on exit
 trap 'tput cnorm;' EXIT
-# reset to normal on exit and clean screen on SIGINT (Ctrl-C)
-trap 'tput cnorm; clear; exit;' SIGINT
 
 # declare default options
 declare -i cols=47
