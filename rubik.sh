@@ -26,7 +26,7 @@ trap 'tput cnorm; clear; exit;' SIGINT
 # declare default options
 declare -i cols=47
 declare -i rows=45
-X_TIME=0.1
+X_TIME=0.05
 Y_TIME=0.14
 REFRESH_TIME=$X_TIME
 
@@ -589,7 +589,7 @@ wall_to_screen()
 	done
 }
 
-wall_to_screen_reverse()
+wall_to_screen_mirrored()
 {
     draw_method=$1
     wall_start_row=$2
@@ -604,24 +604,15 @@ wall_to_screen_reverse()
         for (( y=wall_cube_y;y<wall_cube_y+N_CUBE;y++ )); do
             row_shift=$(( $row_shift_each_y*(y-wall_cube_y) ))
             reversed_x=$((wall_cube_x+N_CUBE-1-(x-wall_cube_x)))
-            #reversed_y=$((wall_cube_y+N_CUBE-1-(y-wall_cube_y)))
+            reversed_y=$((wall_cube_y+N_CUBE-1-(y-wall_cube_y)))
             #echo "reversed_x=$reversed_x reversed_y=$reversed_y"
-            color=${cube[$reversed_x,$y]}
+            color=${cube[$reversed_x,$reversed_y]}
             #echo "color=$color"
             color_from_mapping=${COLOR_MAPPING[$color]}
             col_shift=$(( $col_shift_each_x*(x-wall_cube_x) ))
             start_rows=$(( row_shift+wall_start_row+(x-wall_cube_x)*wall_rows_size))
             start_cols=$(( col_shift+wall_start_cols+(y-wall_cube_y)*wall_cols_size))
             color_to_set=$color_from_mapping
-            #if (( (y-wall_cube_y) % 2 == 1 )); then
-            #    if (( (x-wall_cube_x) % 2 == 1 )); then
-            #        color_to_set=$DIM$color_from_mapping
-            #    fi
-            #else 
-            #    if (( (x-wall_cube_x) % 2 == 0 )); then
-            #        color_to_set=$DIM$color_from_mapping
-            #    fi
-            #fi
             $draw_method $start_rows $start_cols $color_to_set
 		done
 	done
@@ -652,18 +643,18 @@ back_cube_to_screen()
     front_col=$2
 
     back_label $(( front_row + 5 )) $(( front_col - 7))
-    wall_to_screen draw_front_square $front_row $front_col $BACK_X $BACK_Y $FRONT_SQUARE_ROWS_SIZE $FRONT_SQUARE_COLS_SIZE 0 0
+    wall_to_screen_mirrored draw_front_square $front_row $front_col $BACK_X $BACK_Y $FRONT_SQUARE_ROWS_SIZE $FRONT_SQUARE_COLS_SIZE 0 0
     
     right_wall_row=$(( $front_row ))
     right_wall_col=$(( $front_col + FRONT_SQUARE_COLS_SIZE*N_CUBE ))
     left_label $(( right_wall_row + 5 )) $(( right_wall_col + 11 ))
-    wall_to_screen draw_diag_right_square_for_bot_cube $right_wall_row $right_wall_col $LEFT_X $LEFT_Y $RIGHT_SQUARE_ROWS_SIZE $RIGHT_SQUARE_COLS_SIZE 2 0
+    wall_to_screen_mirrored draw_diag_right_square_for_bot_cube $right_wall_row $right_wall_col $LEFT_X $LEFT_Y $RIGHT_SQUARE_ROWS_SIZE $RIGHT_SQUARE_COLS_SIZE 2 0
 
     bot_wall_row=$(( $front_row + FRONT_SQUARE_ROWS_SIZE*N_CUBE ))
     bot_wall_col=$(( $front_col + 1 ))
     bottom_label $(( bot_wall_row +  7 )) $(( bot_wall_col + 10 ))
     #wall_to_screen draw_diag_bot_square $bot_wall_row $bot_wall_col $BOT_X $BOT_Y $TOP_SQUARE_ROWS_SIZE $TOP_SQUARE_COLS_SIZE 0 3
-    wall_to_screen_reverse draw_diag_bot_square $bot_wall_row $bot_wall_col $BOT_X $BOT_Y $TOP_SQUARE_ROWS_SIZE $TOP_SQUARE_COLS_SIZE 0 3
+    wall_to_screen_mirrored draw_diag_bot_square $bot_wall_row $bot_wall_col $BOT_X $BOT_Y $TOP_SQUARE_ROWS_SIZE $TOP_SQUARE_COLS_SIZE 0 3
 }
 
 rotation_seq()
@@ -988,15 +979,17 @@ declare -r UNKNOWN="unknown"
 # execute game loop, then sleep for REFRESH_TIME in a subshell and send SIGALRM to the current process
 # thanks to the trap below it will trigger the game loop again
 tick() {
-    while true
-    do
+    #while true
+    #do
         tput cup 0 0
-        handle_input "$key"
-        key=$UNKNOWN
-        game
-        read -rsn 1 key
-        #( sleep $REFRESH_TIME; kill -s ALRM $$ &> /dev/null )&
-    done
+        if [[ "$key" != "$UNKNOWN" ]]; then
+            handle_input "$key"
+            key=$UNKNOWN
+            game
+        fi
+        #read -rsn1 key
+        ( sleep $REFRESH_TIME; kill -s ALRM $$ &> /dev/null )&
+    #done
 }
 
 declare -r POSSIBLE_INPUTS_FOR_CUBE_ROTATION=( "top_wall_counter_clockwise_rotation" "top_wall_clockwise_rotation" "mid_wall_counter_clockwise_rotation" "mid_wall_clockwise_rotation" "bot_wall_counter_clockwise_rotation" "bot_wall_clockwise_rotation" "front_wall_left_col_down_rotation" "front_wall_left_col_up_rotation" "front_wall_mid_col_down_rotation" "front_wall_mid_col_up_rotation" "front_wall_right_col_down_rotation" "front_wall_counter_clockwise_rotation" "front_wall_clockwise_rotation" "front_wall_right_col_up_rotation" "right_wall_mid_col_down_rotation" "right_wall_mid_col_up_rotation" "back_wall_counter_clockwise_rotation" "back_wall_clockwise_rotation" )
@@ -1013,7 +1006,7 @@ shuffle() {
     done
     tput cup 0 0
 }
-#trap tick ALRM
+trap tick ALRM
 
 parse_args "$@"
 clear_game_area_screen
@@ -1026,7 +1019,7 @@ tick
 #echo $TOP_WALL_CLOCKWISE_ROTATION
 #echo $TOP_WALL_COUNTER_CLOCKWISE_ROTATION
 # poll for user input in loop
-#for (( ; ; ))
-#do
-#	read -rsn 1 key
-#done
+for (( ; ; ))
+do
+	read -rsn 1 key
+done
