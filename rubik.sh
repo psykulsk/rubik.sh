@@ -208,6 +208,8 @@ handle_input ()
         back_wall_counter_clockwise_rotation
 	elif [[ "$1" = "k" ]]; then
         back_wall_clockwise_rotation
+	elif [[ "$1" = "s" ]]; then
+        shuffle
 	else
 		:
 	fi
@@ -602,9 +604,9 @@ wall_to_screen_reverse()
         for (( y=wall_cube_y;y<wall_cube_y+N_CUBE;y++ )); do
             row_shift=$(( $row_shift_each_y*(y-wall_cube_y) ))
             reversed_x=$((wall_cube_x+N_CUBE-1-(x-wall_cube_x)))
-            reversed_y=$((wall_cube_y+N_CUBE-1-(y-wall_cube_y)))
+            #reversed_y=$((wall_cube_y+N_CUBE-1-(y-wall_cube_y)))
             #echo "reversed_x=$reversed_x reversed_y=$reversed_y"
-            color=${cube[$reversed_x,$reversed_y]}
+            color=${cube[$reversed_x,$y]}
             #echo "color=$color"
             color_from_mapping=${COLOR_MAPPING[$color]}
             col_shift=$(( $col_shift_each_x*(x-wall_cube_x) ))
@@ -949,15 +951,16 @@ print_controls()
 {
 cat << EOF
 Controls:
------------------------------------------+
- Horizontal  | Vertical      | Z-axis    |
------------------------------------------+
- T - top row | Y - left col  | H - front |
- G - mid row | U - mid col   | J - mid   |
- B - bot row | I - right col | K - back  |
------------------------------------------+
-Shift - reverse rotation direction       |
------------------------------------------+
+-----------------------------------------------+
+  Horizontal   |  Vertical       |  Z-axis     |
+-----------------------------------------------+
+  T - top row  |  Y - left col   |  H - front  |
+  G - mid row  |  U - mid col    |  J - mid    |
+  B - bot row  |  I - right col  |  K - back   |
+-----------------------------------------------+
+Shift - reverse rotation direction             |
+S - random shuffle                             |
+-----------------------------------------------+
 EOF
 }
 
@@ -967,7 +970,7 @@ game ()
     back_cube_to_screen $back_cube_draw_start_rows $back_cube_draw_start_cols
     print_screen
     print_controls
-    #debug_print_cube
+    debug_print_cube
 }
 
 set_pixel ()
@@ -994,6 +997,21 @@ tick() {
         read -rsn 1 key
         #( sleep $REFRESH_TIME; kill -s ALRM $$ &> /dev/null )&
     done
+}
+
+declare -r POSSIBLE_INPUTS_FOR_CUBE_ROTATION=( "top_wall_counter_clockwise_rotation" "top_wall_clockwise_rotation" "mid_wall_counter_clockwise_rotation" "mid_wall_clockwise_rotation" "bot_wall_counter_clockwise_rotation" "bot_wall_clockwise_rotation" "front_wall_left_col_down_rotation" "front_wall_left_col_up_rotation" "front_wall_mid_col_down_rotation" "front_wall_mid_col_up_rotation" "front_wall_right_col_down_rotation" "front_wall_counter_clockwise_rotation" "front_wall_clockwise_rotation" "front_wall_right_col_up_rotation" "right_wall_mid_col_down_rotation" "right_wall_mid_col_up_rotation" "back_wall_counter_clockwise_rotation" "back_wall_clockwise_rotation" )
+
+shuffle() {
+    for i in {1..50}
+    do
+        tput cup 0 0
+        r=$((RANDOM % ${#POSSIBLE_INPUTS_FOR_CUBE_ROTATION[@]}))
+        random_commnd=${POSSIBLE_INPUTS_FOR_CUBE_ROTATION[$r]}
+        $random_commnd
+        game
+        sleep $REFRESH_TIME;
+    done
+    tput cup 0 0
 }
 #trap tick ALRM
 
