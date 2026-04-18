@@ -618,6 +618,36 @@ wall_to_screen_mirrored()
 	done
 }
 
+wall_to_screen_mirrored_horizontal()
+{
+    draw_method=$1
+    wall_start_row=$2
+    wall_start_cols=$3
+    wall_cube_x=$4
+    wall_cube_y=$5
+    wall_rows_size=$6
+    wall_cols_size=$7
+    row_shift_each_y=$8
+    col_shift_each_x=$9
+	for (( x=wall_cube_x;x<wall_cube_x+N_CUBE;x++ )); do
+        for (( y=wall_cube_y;y<wall_cube_y+N_CUBE;y++ )); do
+            row_shift=$(( $row_shift_each_y*(y-wall_cube_y) ))
+            reversed_x=$((wall_cube_x+N_CUBE-1-(x-wall_cube_x)))
+            reversed_y=$((wall_cube_y+N_CUBE-1-(y-wall_cube_y)))
+            #echo "reversed_x=$reversed_x reversed_y=$reversed_y"
+            #color=${cube[$x,$reversed_y]}
+            color=${cube[$reversed_x,$y]}
+            #echo "color=$color"
+            color_from_mapping=${COLOR_MAPPING[$color]}
+            col_shift=$(( $col_shift_each_x*(x-wall_cube_x) ))
+            start_rows=$(( row_shift+wall_start_row+(x-wall_cube_x)*wall_rows_size))
+            start_cols=$(( col_shift+wall_start_cols+(y-wall_cube_y)*wall_cols_size))
+            color_to_set=$color_from_mapping
+            $draw_method $start_rows $start_cols $color_to_set
+		done
+	done
+}
+
 cube_to_screen()
 {
     front_row=$1
@@ -643,12 +673,12 @@ back_cube_to_screen()
     front_col=$2
 
     back_label $(( front_row + 5 )) $(( front_col - 7))
-    wall_to_screen_mirrored draw_front_square $front_row $front_col $BACK_X $BACK_Y $FRONT_SQUARE_ROWS_SIZE $FRONT_SQUARE_COLS_SIZE 0 0
+    wall_to_screen draw_front_square $front_row $front_col $BACK_X $BACK_Y $FRONT_SQUARE_ROWS_SIZE $FRONT_SQUARE_COLS_SIZE 0 0
     
     right_wall_row=$(( $front_row ))
     right_wall_col=$(( $front_col + FRONT_SQUARE_COLS_SIZE*N_CUBE ))
     left_label $(( right_wall_row + 5 )) $(( right_wall_col + 11 ))
-    wall_to_screen_mirrored draw_diag_right_square_for_bot_cube $right_wall_row $right_wall_col $LEFT_X $LEFT_Y $RIGHT_SQUARE_ROWS_SIZE $RIGHT_SQUARE_COLS_SIZE 2 0
+    wall_to_screen draw_diag_right_square_for_bot_cube $right_wall_row $right_wall_col $LEFT_X $LEFT_Y $RIGHT_SQUARE_ROWS_SIZE $RIGHT_SQUARE_COLS_SIZE 2 0
 
     bot_wall_row=$(( $front_row + FRONT_SQUARE_ROWS_SIZE*N_CUBE ))
     bot_wall_col=$(( $front_col + 1 ))
@@ -940,19 +970,33 @@ front_wall_clockwise_rotation()
 
 print_controls()
 {
-cat << EOF
-Controls:
------------------------------------------------+
-  Horizontal   |  Vertical       |  Z-axis     |
------------------------------------------------+
-  T - top row  |  Y - left col   |  H - front  |
-  G - mid row  |  U - mid col    |  J - mid    |
-  B - bot row  |  I - right col  |  K - back   |
------------------------------------------------+
-Shift - reverse rotation direction             |
-S - random shuffle                             |
------------------------------------------------+
-EOF
+    start_r=1
+    echo -e "\e[$((start_r));$((cols+2))H---------------+"
+    echo -e "\e[$((start_r+1));$((cols+2))H  Controls     |"
+    echo -e "\e[$((start_r+2));$((cols+2))H---------------+"
+    echo -e "\e[$((start_r+3));$((cols+2))H  Horizontal   |"
+    echo -e "\e[$((start_r+4));$((cols+2))H---------------+"
+    echo -e "\e[$((start_r+5));$((cols+2))H T - top row   |"
+    echo -e "\e[$((start_r+6));$((cols+2))H Y - left col  |"
+    echo -e "\e[$((start_r+7));$((cols+2))H H - front     |"
+    echo -e "\e[$((start_r+8));$((cols+2))H---------------+"
+    echo -e "\e[$((start_r+9));$((cols+2))H   Vertical    |"
+    echo -e "\e[$((start_r+10));$((cols+2))H---------------+"
+    echo -e "\e[$((start_r+11));$((cols+2))H Y - left col  |"
+    echo -e "\e[$((start_r+12));$((cols+2))H U - mid col   |"
+    echo -e "\e[$((start_r+13));$((cols+2))H I - right col |"
+    echo -e "\e[$((start_r+14));$((cols+2))H---------------+"
+    echo -e "\e[$((start_r+15));$((cols+2))H    Z-axis     |"
+    echo -e "\e[$((start_r+16));$((cols+2))H---------------+"
+    echo -e "\e[$((start_r+17));$((cols+2))H H - front     |"
+    echo -e "\e[$((start_r+18));$((cols+2))H J - mid       |"
+    echo -e "\e[$((start_r+19));$((cols+2))H K - back      |"
+    echo -e "\e[$((start_r+20));$((cols+2))H---------------+"
+    echo -e "\e[$((start_r+21));$((cols+2))H Shift - rev.  |"
+    echo -e "\e[$((start_r+22));$((cols+2))H  rotation     |"
+    echo -e "\e[$((start_r+23));$((cols+2))H S - random    |"
+    echo -e "\e[$((start_r+24));$((cols+2))H  shuffle      |"
+    echo -e "\e[$((start_r+25));$((cols+2))H---------------+"
 }
 
 game ()
@@ -961,7 +1005,7 @@ game ()
     back_cube_to_screen $back_cube_draw_start_rows $back_cube_draw_start_cols
     print_screen
     print_controls
-    debug_print_cube
+    #debug_print_cube
 }
 
 set_pixel ()
