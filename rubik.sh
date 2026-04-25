@@ -746,23 +746,6 @@ horizontal_rotation_seq()
     echo $sequence
 }
 
-vertical_rotation_seq()
-{
-    sequence=""
-    for column_start_point in $1
-    do
-    
-        IFS=',' read -r x y <<< $column_start_point
-        for i in {0..2}
-        do
-            start_x=$((x+i))
-            sequence="${sequence}${start_x},${y}_"
-        done
-        sequence="${sequence};"
-    done
-    echo $sequence
-}
-
 same_wall_rotation_seq_clockwise()
 {
     sequence=""
@@ -876,8 +859,9 @@ mid_wall_clockwise_rotation()
     rotate_values_between_points cube $MID_ROW_FRONT_LEFT_ROTATION
 }
 
+RIGHT_ROW_Y_SHIFT=2
 FRONT_LEFT_COL_WALL_UP_ROTATION=$(same_wall_rotation_seq_counter_clockwise ${LEFT_X} ${LEFT_Y})
-FRONT_LEFT_COL_UP_ROTATION=$(vertical_rotation_seq "$(( FRONT_X )),$(( FRONT_Y )) $(( TOP_X )),$(( TOP_Y )) $(( BACK_X )),$(( BACK_Y )) $(( BOT_X )),$(( BOT_Y ))")
+FRONT_LEFT_COL_UP_ROTATION=$(rotation_seq "${SEQ_DIR_SOUTH},$(( FRONT_X )),$(( FRONT_Y )) ${SEQ_DIR_SOUTH},$(( TOP_X )),$(( TOP_Y )) ${SEQ_DIR_NORTH},$(( BACK_X )),$(( BACK_Y + RIGHT_ROW_Y_SHIFT )) ${SEQ_DIR_SOUTH},$(( BOT_X )),$(( BOT_Y ))")
 front_wall_left_col_up_rotation()
 {
     rotate_values_between_points cube $FRONT_LEFT_COL_WALL_UP_ROTATION
@@ -885,7 +869,7 @@ front_wall_left_col_up_rotation()
 }
 
 FRONT_LEFT_COL_WALL_DOWN_ROTATION=$(same_wall_rotation_seq_clockwise ${LEFT_X} ${LEFT_Y})
-FRONT_LEFT_COL_DOWN_ROTATION=$(vertical_rotation_seq "$(( FRONT_X )),$(( FRONT_Y )) $(( BOT_X )),$(( BOT_Y )) $(( BACK_X )),$(( BACK_Y )) $(( TOP_X )),$(( TOP_Y ))")
+FRONT_LEFT_COL_DOWN_ROTATION=$(rotation_seq "${SEQ_DIR_SOUTH},$(( FRONT_X )),$(( FRONT_Y )) ${SEQ_DIR_SOUTH},$(( BOT_X )),$(( BOT_Y )) ${SEQ_DIR_NORTH},$(( BACK_X )),$(( BACK_Y + RIGHT_ROW_Y_SHIFT )) ${SEQ_DIR_SOUTH},$(( TOP_X )),$(( TOP_Y ))")
 front_wall_left_col_down_rotation()
 {
     rotate_values_between_points cube $FRONT_LEFT_COL_WALL_DOWN_ROTATION
@@ -893,21 +877,20 @@ front_wall_left_col_down_rotation()
 }
 
 MID_ROW_Y_SHIFT=1
-FRONT_MID_COL_UP_ROTATION=$(vertical_rotation_seq "$(( FRONT_X )),$(( FRONT_Y + MID_ROW_Y_SHIFT )) $(( TOP_X )),$(( TOP_Y + MID_ROW_Y_SHIFT )) $(( BACK_X )),$(( BACK_Y + MID_ROW_Y_SHIFT )) $(( BOT_X )),$(( BOT_Y + MID_ROW_Y_SHIFT ))")
+FRONT_MID_COL_UP_ROTATION=$(rotation_seq "${SEQ_DIR_SOUTH},$(( FRONT_X )),$(( FRONT_Y + MID_ROW_Y_SHIFT )) ${SEQ_DIR_SOUTH},$(( TOP_X )),$(( TOP_Y + MID_ROW_Y_SHIFT )) ${SEQ_DIR_NORTH},$(( BACK_X )),$(( BACK_Y + MID_ROW_Y_SHIFT )) ${SEQ_DIR_SOUTH},$(( BOT_X )),$(( BOT_Y + MID_ROW_Y_SHIFT ))")
 front_wall_mid_col_up_rotation()
 {
     rotate_values_between_points cube $FRONT_MID_COL_UP_ROTATION
 }
 
-FRONT_MID_COL_DOWN_ROTATION=$(vertical_rotation_seq "$(( FRONT_X )),$(( FRONT_Y + MID_ROW_Y_SHIFT )) $(( BOT_X )),$(( BOT_Y + MID_ROW_Y_SHIFT )) $(( BACK_X )),$(( BACK_Y + MID_ROW_Y_SHIFT )) $(( TOP_X )),$(( TOP_Y + MID_ROW_Y_SHIFT ))")
+FRONT_MID_COL_DOWN_ROTATION=$(rotation_seq "${SEQ_DIR_SOUTH},$(( FRONT_X )),$(( FRONT_Y + MID_ROW_Y_SHIFT )) ${SEQ_DIR_SOUTH},$(( BOT_X )),$(( BOT_Y + MID_ROW_Y_SHIFT )) ${SEQ_DIR_NORTH},$(( BACK_X )),$(( BACK_Y + MID_ROW_Y_SHIFT )) ${SEQ_DIR_SOUTH},$(( TOP_X )),$(( TOP_Y + MID_ROW_Y_SHIFT ))")
 front_wall_mid_col_down_rotation()
 {
     rotate_values_between_points cube $FRONT_MID_COL_DOWN_ROTATION
 }
 
-RIGHT_ROW_Y_SHIFT=2
 FRONT_RIGHT_COL_WALL_UP_ROTATION=$(same_wall_rotation_seq_counter_clockwise ${RIGHT_X} ${RIGHT_Y})
-FRONT_RIGHT_COL_UP_ROTATION=$(vertical_rotation_seq "$(( FRONT_X )),$(( FRONT_Y + RIGHT_ROW_Y_SHIFT )) $(( TOP_X )),$(( TOP_Y + RIGHT_ROW_Y_SHIFT )) $(( BACK_X )),$(( BACK_Y + RIGHT_ROW_Y_SHIFT )) $(( BOT_X )),$(( BOT_Y + RIGHT_ROW_Y_SHIFT ))")
+FRONT_RIGHT_COL_UP_ROTATION=$(rotation_seq "${SEQ_DIR_SOUTH},$(( FRONT_X )),$(( FRONT_Y + RIGHT_ROW_Y_SHIFT )) ${SEQ_DIR_SOUTH},$(( TOP_X )),$(( TOP_Y + RIGHT_ROW_Y_SHIFT )) ${SEQ_DIR_NORTH},$(( BACK_X )),$(( BACK_Y )) ${SEQ_DIR_SOUTH},$(( BOT_X )),$(( BOT_Y + RIGHT_ROW_Y_SHIFT ))")
 front_wall_right_col_up_rotation()
 {
     rotate_values_between_points cube $FRONT_RIGHT_COL_WALL_UP_ROTATION
@@ -915,7 +898,7 @@ front_wall_right_col_up_rotation()
 }
 
 FRONT_RIGHT_COL_WALL_DOWN_ROTATION=$(same_wall_rotation_seq_clockwise ${RIGHT_X} ${RIGHT_Y})
-FRONT_RIGHT_COL_DOWN_ROTATION=$(vertical_rotation_seq "$(( FRONT_X )),$(( FRONT_Y + RIGHT_ROW_Y_SHIFT )) $(( BOT_X )),$(( BOT_Y + RIGHT_ROW_Y_SHIFT )) $(( BACK_X )),$(( BACK_Y + RIGHT_ROW_Y_SHIFT )) $(( TOP_X )),$(( TOP_Y + RIGHT_ROW_Y_SHIFT ))")
+FRONT_RIGHT_COL_DOWN_ROTATION=$(rotation_seq "${SEQ_DIR_SOUTH},$(( FRONT_X )),$(( FRONT_Y + RIGHT_ROW_Y_SHIFT )) ${SEQ_DIR_SOUTH},$(( BOT_X )),$(( BOT_Y + RIGHT_ROW_Y_SHIFT )) ${SEQ_DIR_NORTH},$(( BACK_X )),$(( BACK_Y )) ${SEQ_DIR_SOUTH},$(( TOP_X )),$(( TOP_Y + RIGHT_ROW_Y_SHIFT ))")
 front_wall_right_col_down_rotation()
 {
     rotate_values_between_points cube $FRONT_RIGHT_COL_WALL_DOWN_ROTATION
@@ -975,8 +958,8 @@ print_controls()
     echo -e "\e[$((start_r+3));$((cols+2))H  Horizontal   |"
     echo -e "\e[$((start_r+4));$((cols+2))H---------------+"
     echo -e "\e[$((start_r+5));$((cols+2))H T - top row   |"
-    echo -e "\e[$((start_r+6));$((cols+2))H Y - left col  |"
-    echo -e "\e[$((start_r+7));$((cols+2))H H - front     |"
+    echo -e "\e[$((start_r+6));$((cols+2))H G - mid row   |"
+    echo -e "\e[$((start_r+7));$((cols+2))H B - bot row   |"
     echo -e "\e[$((start_r+8));$((cols+2))H---------------+"
     echo -e "\e[$((start_r+9));$((cols+2))H   Vertical    |"
     echo -e "\e[$((start_r+10));$((cols+2))H---------------+"
@@ -990,10 +973,10 @@ print_controls()
     echo -e "\e[$((start_r+18));$((cols+2))H J - mid       |"
     echo -e "\e[$((start_r+19));$((cols+2))H K - back      |"
     echo -e "\e[$((start_r+20));$((cols+2))H---------------+"
-    echo -e "\e[$((start_r+21));$((cols+2))H Shift - rev.  |"
-    echo -e "\e[$((start_r+22));$((cols+2))H  rotation     |"
+    echo -e "\e[$((start_r+21));$((cols+2))H Hold Shift -  |"
+    echo -e "\e[$((start_r+22));$((cols+2))H rev. rotation |"
     echo -e "\e[$((start_r+23));$((cols+2))H S - random    |"
-    echo -e "\e[$((start_r+24));$((cols+2))H  shuffle      |"
+    echo -e "\e[$((start_r+24));$((cols+2))H shuffle       |"
     echo -e "\e[$((start_r+25));$((cols+2))H---------------+"
 }
 
@@ -1003,6 +986,7 @@ game ()
     back_cube_to_screen $back_cube_draw_start_rows $back_cube_draw_start_cols
     print_screen
     print_controls
+    #tput cup $(( rows+1 )) 0
     #debug_print_cube
 }
 
