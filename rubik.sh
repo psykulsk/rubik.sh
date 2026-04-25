@@ -206,6 +206,36 @@ handle_input ()
         back_wall_counter_clockwise_rotation
 	elif [[ "$1" = "k" ]]; then
         back_wall_clockwise_rotation
+	elif [[ "$1" = "r" ]]; then
+        # whole cube horizontal right rotation
+        top_wall_counter_clockwise_rotation
+        mid_wall_counter_clockwise_rotation
+        bot_wall_counter_clockwise_rotation
+	elif [[ "$1" = "R" ]]; then
+        # whole cube horizontal left rotation
+        top_wall_clockwise_rotation
+        mid_wall_clockwise_rotation
+        bot_wall_clockwise_rotation
+	elif [[ "$1" = "f" ]]; then
+        # whole cube up rotation
+        front_wall_left_col_up_rotation
+        front_wall_mid_col_up_rotation
+        front_wall_right_col_up_rotation
+	elif [[ "$1" = "F" ]]; then
+        # whole cube down rotation
+        front_wall_left_col_down_rotation
+        front_wall_mid_col_down_rotation
+        front_wall_right_col_down_rotation
+	elif [[ "$1" = "v" ]]; then
+        # whole cube clockwise rotation
+        front_wall_clockwise_rotation
+        right_wall_mid_col_down_rotation
+        back_wall_clockwise_rotation
+	elif [[ "$1" = "V" ]]; then
+        # whole cube counter clockwise rotation
+        front_wall_counter_clockwise_rotation
+        right_wall_mid_col_up_rotation
+        back_wall_counter_clockwise_rotation
 	elif [[ "$1" = "s" ]]; then
         shuffle
 	else
@@ -973,11 +1003,17 @@ print_controls()
     echo -e "\e[$((start_r+18));$((cols+2))H J - mid       |"
     echo -e "\e[$((start_r+19));$((cols+2))H K - back      |"
     echo -e "\e[$((start_r+20));$((cols+2))H---------------+"
-    echo -e "\e[$((start_r+21));$((cols+2))H Hold Shift -  |"
-    echo -e "\e[$((start_r+22));$((cols+2))H rev. rotation |"
-    echo -e "\e[$((start_r+23));$((cols+2))H S - random    |"
-    echo -e "\e[$((start_r+24));$((cols+2))H shuffle       |"
-    echo -e "\e[$((start_r+25));$((cols+2))H---------------+"
+    echo -e "\e[$((start_r+21));$((cols+2))H   Cube rot.   |"
+    echo -e "\e[$((start_r+22));$((cols+2))H---------------+"
+    echo -e "\e[$((start_r+23));$((cols+2))H R - horizontal|"
+    echo -e "\e[$((start_r+24));$((cols+2))H F - vertical  |"
+    echo -e "\e[$((start_r+25));$((cols+2))H V - z-axis    |"
+    echo -e "\e[$((start_r+26));$((cols+2))H---------------+"
+    echo -e "\e[$((start_r+27));$((cols+2))H Hold Shift -  |"
+    echo -e "\e[$((start_r+28));$((cols+2))H rev. rotation |"
+    echo -e "\e[$((start_r+29));$((cols+2))H S - random    |"
+    echo -e "\e[$((start_r+30));$((cols+2))H shuffle       |"
+    echo -e "\e[$((start_r+31));$((cols+2))H---------------+"
 }
 
 game ()
@@ -1048,4 +1084,5 @@ tick
 for (( ; ; ))
 do
 	read -rsn 1 key
+
 done
