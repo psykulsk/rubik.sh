@@ -919,7 +919,7 @@ front_wall_mid_col_down_rotation()
     rotate_values_between_points cube $FRONT_MID_COL_DOWN_ROTATION
 }
 
-FRONT_RIGHT_COL_WALL_UP_ROTATION=$(same_wall_rotation_seq_counter_clockwise ${RIGHT_X} ${RIGHT_Y})
+FRONT_RIGHT_COL_WALL_UP_ROTATION=$(same_wall_rotation_seq_clockwise ${RIGHT_X} ${RIGHT_Y})
 FRONT_RIGHT_COL_UP_ROTATION=$(rotation_seq "${SEQ_DIR_SOUTH},$(( FRONT_X )),$(( FRONT_Y + RIGHT_ROW_Y_SHIFT )) ${SEQ_DIR_SOUTH},$(( TOP_X )),$(( TOP_Y + RIGHT_ROW_Y_SHIFT )) ${SEQ_DIR_NORTH},$(( BACK_X )),$(( BACK_Y )) ${SEQ_DIR_SOUTH},$(( BOT_X )),$(( BOT_Y + RIGHT_ROW_Y_SHIFT ))")
 front_wall_right_col_up_rotation()
 {
@@ -927,7 +927,7 @@ front_wall_right_col_up_rotation()
     rotate_values_between_points cube $FRONT_RIGHT_COL_UP_ROTATION
 }
 
-FRONT_RIGHT_COL_WALL_DOWN_ROTATION=$(same_wall_rotation_seq_clockwise ${RIGHT_X} ${RIGHT_Y})
+FRONT_RIGHT_COL_WALL_DOWN_ROTATION=$(same_wall_rotation_seq_counter_clockwise ${RIGHT_X} ${RIGHT_Y})
 FRONT_RIGHT_COL_DOWN_ROTATION=$(rotation_seq "${SEQ_DIR_SOUTH},$(( FRONT_X )),$(( FRONT_Y + RIGHT_ROW_Y_SHIFT )) ${SEQ_DIR_SOUTH},$(( BOT_X )),$(( BOT_Y + RIGHT_ROW_Y_SHIFT )) ${SEQ_DIR_NORTH},$(( BACK_X )),$(( BACK_Y )) ${SEQ_DIR_SOUTH},$(( TOP_X )),$(( TOP_Y + RIGHT_ROW_Y_SHIFT ))")
 front_wall_right_col_down_rotation()
 {
