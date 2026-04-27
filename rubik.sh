@@ -860,19 +860,19 @@ top_wall_counter_clockwise_rotation()
 }
 
 BOT_ROW_X_SHIFT=2
-BOT_WALL_COUNTER_CLOCKWISE_ROTATION=$(same_wall_rotation_seq_counter_clockwise ${BOT_X} ${BOT_Y})
+BOT_WALL_CLOCKWISE_ROTATION=$(same_wall_rotation_seq_clockwise ${BOT_X} ${BOT_Y})
 BOT_ROW_FRONT_RIGHT_ROTATION=$(horizontal_rotation_seq "$(( FRONT_X + BOT_ROW_X_SHIFT )),$(( FRONT_Y )) $(( RIGHT_X + BOT_ROW_X_SHIFT )),$(( RIGHT_Y )) $(( BACK_X + BOT_ROW_X_SHIFT )),$(( BACK_Y )) $(( LEFT_X + BOT_ROW_X_SHIFT )),$(( LEFT_Y )) ")
 bot_wall_counter_clockwise_rotation()
 {
-    rotate_values_between_points cube $BOT_WALL_COUNTER_CLOCKWISE_ROTATION
+    rotate_values_between_points cube $BOT_WALL_CLOCKWISE_ROTATION
     rotate_values_between_points cube $BOT_ROW_FRONT_RIGHT_ROTATION
 }
 
-BOT_WALL_CLOCKWISE_ROTATION=$(same_wall_rotation_seq_clockwise ${BOT_X} ${BOT_Y})
+BOT_WALL_COUNTER_CLOCKWISE_ROTATION=$(same_wall_rotation_seq_counter_clockwise ${BOT_X} ${BOT_Y})
 BOT_ROW_FRONT_LEFT_ROTATION=$(horizontal_rotation_seq "$(( FRONT_X + BOT_ROW_X_SHIFT )),$(( FRONT_Y )) $(( LEFT_X + BOT_ROW_X_SHIFT )),$(( LEFT_Y )) $(( BACK_X + BOT_ROW_X_SHIFT )),$(( BACK_Y )) $(( RIGHT_X + BOT_ROW_X_SHIFT )),$(( RIGHT_Y ))")
 bot_wall_clockwise_rotation()
 {
-    rotate_values_between_points cube $BOT_WALL_CLOCKWISE_ROTATION
+    rotate_values_between_points cube $BOT_WALL_COUNTER_CLOCKWISE_ROTATION
     rotate_values_between_points cube $BOT_ROW_FRONT_LEFT_ROTATION
 }
 
